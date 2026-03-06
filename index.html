@@ -212,6 +212,22 @@
       display: none !important;
     }
 
+    #homeOverlay.closing {
+      pointer-events: none;
+      animation: overlayDismiss 240ms ease forwards;
+    }
+
+    @keyframes overlayDismiss {
+      from {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      to {
+        opacity: 0;
+        transform: translateY(24px);
+      }
+    }
+
     #homePanel {
       width: min(930px, 100%);
       border: 1px solid rgba(214, 232, 238, 0.4);
@@ -308,7 +324,7 @@
         <h1>PROJECT RESOLUTE</h1>
         <div id="subtitleBadge">v1.4: THE CHESS UPDATE</div>
         <p class="muted" style="margin:0 0 8px;">Discrete command warfare. One side, one move, one consequence.</p>
-        <button id="playBtn">Deploy Operation</button>
+        <button id="playBtn" type="button" onclick="startGame()">Deploy Operation</button>
       </div>
       <div id="patchWidget">
         <h2 style="margin:0;">NEW RULES</h2>
@@ -1154,6 +1170,17 @@
       logMsg("Match start. Economy of One active: exactly one action per phase.", "good");
     }
 
+    function startGame() {
+      if (ui.homeOverlay.hidden || ui.homeOverlay.classList.contains("closing")) return;
+      ui.homeOverlay.classList.add("closing");
+      window.setTimeout(() => {
+        ui.homeOverlay.hidden = true;
+        ui.homeOverlay.classList.remove("closing");
+      }, 240);
+      resetMatch();
+      startPhase("player");
+    }
+
     canvas.addEventListener("mousemove", (e) => {
       const rect = canvas.getBoundingClientRect();
       const x = Math.floor((e.clientX - rect.left) * (canvas.width / rect.width) / TILE);
@@ -1188,11 +1215,12 @@
       btn.addEventListener("click", () => buildAtSelected(btn.dataset.build));
     }
 
-    ui.playBtn.addEventListener("click", () => {
-      ui.homeOverlay.hidden = true;
-      resetMatch();
-      startPhase("player");
+    ui.playBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      startGame();
     });
+
+    window.startGame = startGame;
 
     requestAnimationFrame(updateLoop);
   </script>
