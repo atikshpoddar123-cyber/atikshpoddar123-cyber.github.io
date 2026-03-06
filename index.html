@@ -139,6 +139,22 @@
       cursor: not-allowed;
     }
 
+    select {
+      width: 100%;
+      margin: 4px 0;
+      border: 1px solid #4f6f85;
+      background: #27485c;
+      color: white;
+      border-radius: 6px;
+      padding: 6px 7px;
+      font-size: 12px;
+    }
+
+    #matchStatus {
+      font-size: 12px;
+      margin-top: 6px;
+    }
+
     #log {
       height: 118px;
       overflow: auto;
@@ -257,6 +273,23 @@
       <h1>Colony Command</h1>
 
       <div class="card">
+        <h2>Match Setup</h2>
+        <label class="muted" for="modeSelect">Mode</label>
+        <select id="modeSelect">
+          <option value="single" selected>Single Player (vs AI)</option>
+          <option value="two-player">2 Player (Hot Seat)</option>
+        </select>
+        <label class="muted" for="difficultySelect">AI Difficulty</label>
+        <select id="difficultySelect">
+          <option value="easy">Easy</option>
+          <option value="normal" selected>Normal</option>
+          <option value="hard">Hard</option>
+        </select>
+        <button id="endTurnBtn" hidden>End Turn (T)</button>
+        <div id="matchStatus" class="muted"></div>
+      </div>
+
+      <div class="card">
         <h2>Resources</h2>
         <div id="resourceStats" class="stats"></div>
       </div>
@@ -330,6 +363,18 @@
     const GRID_H = 20;
     const TILE = 30;
     const PLAYER_ID = 0;
+    const PLAYER_TWO_ID = 1;
+
+    const GAME_MODE = {
+      SINGLE: "single",
+      TWO_PLAYER: "two-player"
+    };
+
+    const AI_DIFFICULTIES = {
+      easy: { aiTickInterval: 2.8, profileScale: 0.78 },
+      normal: { aiTickInterval: 2.1, profileScale: 1 },
+      hard: { aiTickInterval: 1.6, profileScale: 1.22 }
+    };
 
     const TERRAIN = {
       LAND: "land",
@@ -412,6 +457,10 @@
       trainSoldier: document.getElementById("trainSoldier"),
       trainArcher: document.getElementById("trainArcher"),
       questList: document.getElementById("questList"),
+      modeSelect: document.getElementById("modeSelect"),
+      difficultySelect: document.getElementById("difficultySelect"),
+      endTurnBtn: document.getElementById("endTurnBtn"),
+      matchStatus: document.getElementById("matchStatus"),
       tutorialOverlay: document.getElementById("tutorialOverlay"),
       closeTutorialBtn: document.getElementById("closeTutorialBtn"),
       dontShowTutorialBtn: document.getElementById("dontShowTutorialBtn")
@@ -443,18 +492,68 @@
       gameOver: false,
       winnerText: "",
       tickCount: 0,
-      factions: [
-        createFaction(0, "Player", true),
-        createFaction(1, "Crimson Pact", false),
-        createFaction(2, "Dune Dominion", false)
-      ],
-      aiProfiles: [
-        null,
-        { aggression: 0.72, defenseBias: 0.5, economyBias: 0.62, focusPlayer: 0.66 },
-        { aggression: 0.8, defenseBias: 0.44, economyBias: 0.56, focusPlayer: 0.8 }
-      ],
+      gameMode: GAME_MODE.SINGLE,
+      aiDifficulty: "normal",
+      activePlayerId: PLAYER_ID,
+      aiTickInterval: AI_DIFFICULTIES.normal.aiTickInterval,
+      factions: [],
+      aiProfiles: [],
       quests: createQuests()
     };
+
+    function isTwoPlayerMode() {
+      return state.gameMode === GAME_MODE.TWO_PLAYER;
+    }
+
+    function isHumanFaction(id) {
+      if (isTwoPlayerMode()) return id === PLAYER_ID || id === PLAYER_TWO_ID;
+      return id === PLAYER_ID;
+    }
+
+    function getControllablePlayerId() {
+      return isTwoPlayerMode() ? state.activePlayerId : PLAYER_ID;
+    }
+
+    function getAIConfig() {
+      return AI_DIFFICULTIES[state.aiDifficulty] || AI_DIFFICULTIES.normal;
+    }
+
+    function scaleProfile(base, scale) {
+      return {
+        aggression: clamp(base.aggression * scale, 0.2, 0.98),
+        defenseBias: clamp(base.defenseBias * scale, 0.2, 0.98),
+        economyBias: clamp(base.economyBias * scale, 0.2, 0.98),
+        focusPlayer: clamp(base.focusPlayer * scale, 0.25, 0.98)
+      };
+    }
+
+    function configureMatch() {
+      state.activePlayerId = PLAYER_ID;
+      state.factions = isTwoPlayerMode()
+        ? [
+            createFaction(PLAYER_ID, "Player 1", true),
+            createFaction(PLAYER_TWO_ID, "Player 2", true)
+          ]
+        : [
+            createFaction(PLAYER_ID, "Player", true),
+            createFaction(1, "Crimson Pact", false),
+            createFaction(2, "Dune Dominion", false)
+          ];
+
+      state.aiProfiles = [];
+      if (!isTwoPlayerMode()) {
+        const scale = getAIConfig().profileScale;
+        state.aiProfiles[1] = scaleProfile(
+          { aggression: 0.72, defenseBias: 0.5, economyBias: 0.62, focusPlayer: 0.66 },
+          scale
+        );
+        state.aiProfiles[2] = scaleProfile(
+          { aggression: 0.8, defenseBias: 0.44, economyBias: 0.56, focusPlayer: 0.8 },
+          scale
+        );
+      }
+      state.aiTickInterval = getAIConfig().aiTickInterval;
+    }
 
     function createFaction(id, name, isPlayer) {
       return {
@@ -546,6 +645,7 @@
     }
 
     function initMap() {
+      state.map = [];
       for (let y = 0; y < GRID_H; y++) {
         const row = [];
         for (let x = 0; x < GRID_W; x++) {
@@ -557,8 +657,12 @@
       }
 
       carveColony(5, Math.floor(GRID_H / 2), PLAYER_ID, 2);
-      carveColony(GRID_W - 6, 5, 1, 2);
-      carveColony(GRID_W - 7, GRID_H - 6, 2, 2);
+      if (isTwoPlayerMode()) {
+        carveColony(GRID_W - 6, Math.floor(GRID_H / 2), PLAYER_TWO_ID, 2);
+      } else {
+        carveColony(GRID_W - 6, 5, 1, 2);
+        carveColony(GRID_W - 7, GRID_H - 6, 2, 2);
+      }
 
       const pc = { x: 5, y: Math.floor(GRID_H / 2) };
       placeBuilding(pc.x, pc.y, "house", PLAYER_ID, true);
@@ -567,25 +671,42 @@
       placeBuilding(pc.x - 1, pc.y, "market", PLAYER_ID, true);
       placeBuilding(pc.x - 2, pc.y, "wall", PLAYER_ID, true);
 
-      const e1 = { x: GRID_W - 6, y: 5 };
-      const e2 = { x: GRID_W - 7, y: GRID_H - 6 };
-      placeBuilding(e1.x, e1.y, "house", 1, true);
-      placeBuilding(e1.x - 1, e1.y, "barracks", 1, true);
-      placeBuilding(e1.x, e1.y + 1, "market", 1, true);
-      placeBuilding(e1.x + 1, e1.y, "wall", 1, true);
+      if (isTwoPlayerMode()) {
+        const p2 = { x: GRID_W - 6, y: Math.floor(GRID_H / 2) };
+        placeBuilding(p2.x, p2.y, "house", PLAYER_TWO_ID, true);
+        placeBuilding(p2.x - 1, p2.y, "barracks", PLAYER_TWO_ID, true);
+        placeBuilding(p2.x, p2.y - 1, "market", PLAYER_TWO_ID, true);
+        placeBuilding(p2.x + 1, p2.y, "wall", PLAYER_TWO_ID, true);
+      } else {
+        const e1 = { x: GRID_W - 6, y: 5 };
+        const e2 = { x: GRID_W - 7, y: GRID_H - 6 };
+        placeBuilding(e1.x, e1.y, "house", 1, true);
+        placeBuilding(e1.x - 1, e1.y, "barracks", 1, true);
+        placeBuilding(e1.x, e1.y + 1, "market", 1, true);
+        placeBuilding(e1.x + 1, e1.y, "wall", 1, true);
 
-      placeBuilding(e2.x, e2.y, "house", 2, true);
-      placeBuilding(e2.x - 1, e2.y, "archery", 2, true);
-      placeBuilding(e2.x, e2.y - 1, "market", 2, true);
-      placeBuilding(e2.x + 1, e2.y, "wall", 2, true);
+        placeBuilding(e2.x, e2.y, "house", 2, true);
+        placeBuilding(e2.x - 1, e2.y, "archery", 2, true);
+        placeBuilding(e2.x, e2.y - 1, "market", 2, true);
+        placeBuilding(e2.x + 1, e2.y, "wall", 2, true);
+      }
 
       spawnUnit(PLAYER_ID, "soldier", pc.x + 1, pc.y + 1, true);
       spawnUnit(PLAYER_ID, "archer", pc.x, pc.y - 1, true);
       spawnUnit(PLAYER_ID, "soldier", pc.x + 2, pc.y, true);
-      spawnUnit(1, "soldier", e1.x - 1, e1.y + 1, true);
-      spawnUnit(1, "archer", e1.x, e1.y - 1, true);
-      spawnUnit(2, "archer", e2.x - 1, e2.y - 1, true);
-      spawnUnit(2, "soldier", e2.x, e2.y + 1, true);
+      if (isTwoPlayerMode()) {
+        const p2 = { x: GRID_W - 6, y: Math.floor(GRID_H / 2) };
+        spawnUnit(PLAYER_TWO_ID, "soldier", p2.x - 1, p2.y + 1, true);
+        spawnUnit(PLAYER_TWO_ID, "archer", p2.x, p2.y - 2, true);
+        spawnUnit(PLAYER_TWO_ID, "soldier", p2.x - 2, p2.y, true);
+      } else {
+        const e1 = { x: GRID_W - 6, y: 5 };
+        const e2 = { x: GRID_W - 7, y: GRID_H - 6 };
+        spawnUnit(1, "soldier", e1.x - 1, e1.y + 1, true);
+        spawnUnit(1, "archer", e1.x, e1.y - 1, true);
+        spawnUnit(2, "archer", e2.x - 1, e2.y - 1, true);
+        spawnUnit(2, "soldier", e2.x, e2.y + 1, true);
+      }
     }
 
     function carveColony(cx, cy, owner, radius = 1) {
@@ -767,7 +888,7 @@
       const attacker = getFaction(owner);
 
       if (t.building) {
-        if (owner === PLAYER_ID) {
+        if (isHumanFaction(owner)) {
           t.building = null;
           t.hp = 0;
         } else {
@@ -782,7 +903,7 @@
       t.owner = owner;
       t.hp = 0;
 
-      if (owner === PLAYER_ID) {
+      if (isHumanFaction(owner)) {
         attacker.stats.tilesCaptured += 1;
         attacker.stats.expansionSuccess += 1;
         handlePlayerSuccess(x, y, byUnit ? "+Capture" : "+Expand", previousOwner >= 0 ? "#ffe08a" : "#9fffc6");
@@ -813,7 +934,7 @@
       tile.hp = (type === "wall" ? 20 : 12);
 
       if (type === "market" && owner === PLAYER_ID) faction.stats.marketsBuilt += 1;
-      if (!free && owner === PLAYER_ID) {
+      if (!free && isHumanFaction(owner)) {
         streakBonus(0.8);
         const c = toCanvasCenter(x, y);
         addParticles(c.px, c.py, "#9fd7ff", 8);
@@ -888,10 +1009,10 @@
 
     function resolveCombat(attacker, defender) {
       const wasAlive = defender.hp > 0;
-      const attackPower = attacker.atk + (attacker.owner === PLAYER_ID ? 2 : 0);
+      const attackPower = attacker.atk + (isHumanFaction(attacker.owner) ? 2 : 0);
       defender.hp -= attackPower;
       if (defender.hp > 0) {
-        const retaliationMult = attacker.owner === PLAYER_ID ? 0.4 : 0.6;
+        const retaliationMult = isHumanFaction(attacker.owner) ? 0.4 : 0.6;
         attacker.hp -= Math.max(1, Math.floor(defender.atk * retaliationMult));
       }
       if (wasAlive && defender.hp <= 0) {
@@ -899,7 +1020,7 @@
         addParticles(c.px, c.py, "#ff9a9a", 14);
         addFloatText(c.px, c.py - 10, "KO!", "#ffd1d1");
         bumpShake(2.2);
-        if (attacker.owner === PLAYER_ID) {
+        if (isHumanFaction(attacker.owner)) {
           streakBonus(1.1);
         }
       }
@@ -945,7 +1066,7 @@
             u.attackCooldown = 0.55;
           } else {
             if (captureTile(u.owner, u.target.x, u.target.y, true)) {
-              if (u.owner === PLAYER_ID) logMsg("Tile captured by your unit", "accent");
+              if (isHumanFaction(u.owner)) logMsg(`${getFaction(u.owner).name} captured a tile by unit`, "accent");
             }
             u.attackCooldown = 0.65;
           }
@@ -983,9 +1104,9 @@
 
       let territory = 0;
       let perTick = {
-        food: id === PLAYER_ID ? 2.2 : 1.5,
-        materials: id === PLAYER_ID ? 2 : 1.3,
-        gold: id === PLAYER_ID ? 2 : 1.3,
+        food: isHumanFaction(id) ? 2.2 : 1.5,
+        materials: isHumanFaction(id) ? 2 : 1.3,
+        gold: isHumanFaction(id) ? 2 : 1.3,
         housing: 0,
         military: 0,
         defense: 0
@@ -1049,7 +1170,7 @@
       r.gold = clamp(r.gold, 0, 9999);
       r.morale = clamp(r.morale, 25, 125);
 
-      if (id === PLAYER_ID && r.food < 0 && state.tickCount % 8 === 0) {
+      if (id === getControllablePlayerId() && r.food < 0 && state.tickCount % 8 === 0) {
         logMsg("Food shortage! Build houses or markets.", "bad");
       }
 
@@ -1064,7 +1185,7 @@
         results[f.id] = evaluateFaction(f.id);
       }
 
-      runQuests();
+      if (!isTwoPlayerMode()) runQuests();
       checkVictory(results);
     }
 
@@ -1080,6 +1201,22 @@
     }
 
     function checkVictory(results) {
+      if (isTwoPlayerMode()) {
+        const p1 = results[PLAYER_ID] ? results[PLAYER_ID].territory : 0;
+        const p2 = results[PLAYER_TWO_ID] ? results[PLAYER_TWO_ID].territory : 0;
+        if (p1 <= 0 && p2 <= 0) {
+          state.gameOver = true;
+          state.winnerText = "Draw - both colonies collapsed.";
+        } else if (p1 <= 0) {
+          state.gameOver = true;
+          state.winnerText = "Player 2 wins!";
+        } else if (p2 <= 0) {
+          state.gameOver = true;
+          state.winnerText = "Player 1 wins!";
+        }
+        return;
+      }
+
       const playerTiles = results[PLAYER_ID].territory;
       const totalLand = GRID_W * GRID_H;
       const enemiesAlive = state.factions
@@ -1323,7 +1460,8 @@
       const tile = getTile(x, y);
       if (!tile || !state.selectedUnitId) return;
       const u = getUnitById(state.selectedUnitId);
-      if (!u || u.owner !== PLAYER_ID) return;
+      const activePlayer = getControllablePlayerId();
+      if (!u || u.owner !== activePlayer) return;
       u.target = { x, y };
       logMsg(`Unit #${u.id} moving to (${x}, ${y})`);
     }
@@ -1337,8 +1475,9 @@
 
       selectTile(x, y);
       const clickedUnit = getUnitAt(x, y);
+      const activePlayer = getControllablePlayerId();
 
-      if (clickedUnit && clickedUnit.owner === PLAYER_ID) {
+      if (clickedUnit && clickedUnit.owner === activePlayer) {
         state.selectedUnitId = clickedUnit.id;
         logMsg(`Selected ${UNIT_TYPES[clickedUnit.type].label} #${clickedUnit.id}`);
       } else if (state.selectedUnitId) {
@@ -1366,12 +1505,13 @@
 
     function playerExpandSelected() {
       if (!state.selectedTile) return;
-      const p = getFaction(PLAYER_ID);
+      const activePlayer = getControllablePlayerId();
+      const p = getFaction(activePlayer);
       const x = state.selectedTile.x;
       const y = state.selectedTile.y;
       const cost = { materials: 12, gold: 4 };
 
-      if (!canClaim(PLAYER_ID, x, y)) {
+      if (!canClaim(activePlayer, x, y)) {
         logMsg("Cannot capture: needs nearby owned territory.", "bad");
         return;
       }
@@ -1381,7 +1521,7 @@
       }
 
       spendResources(p, cost);
-      if (captureTile(PLAYER_ID, x, y, false)) {
+      if (captureTile(activePlayer, x, y, false)) {
         logMsg(`Captured tile (${x}, ${y})`, "good");
       } else {
         logMsg("Capture attempt damaged defenses.", "accent");
@@ -1403,12 +1543,13 @@
 
       const { x, y } = state.selectedTile;
       const t = getTile(x, y);
-      if (t.owner !== PLAYER_ID) {
+      const activePlayer = getControllablePlayerId();
+      if (t.owner !== activePlayer) {
         logMsg("You can only build on your territory.", "bad");
         return;
       }
 
-      const ok = placeBuilding(x, y, type, PLAYER_ID, false);
+      const ok = placeBuilding(x, y, type, activePlayer, false);
       if (ok) {
         logMsg(`Built ${BUILDINGS[type].label} at (${x}, ${y})`, "good");
       } else {
@@ -1438,7 +1579,8 @@
       }
 
       const tile = getTile(state.selectedTile.x, state.selectedTile.y);
-      if (tile.owner !== PLAYER_ID) {
+      const activePlayer = getControllablePlayerId();
+      if (tile.owner !== activePlayer) {
         logMsg("Selected tile is not yours.", "bad");
         return;
       }
@@ -1449,7 +1591,7 @@
         return;
       }
 
-      const ok = spawnUnit(PLAYER_ID, type, tile.x, tile.y, false);
+      const ok = spawnUnit(activePlayer, type, tile.x, tile.y, false);
       if (ok) {
         logMsg(`Trained ${UNIT_TYPES[type].label}`, "good");
         streakBonus(0.75);
@@ -1463,7 +1605,8 @@
     }
 
     function cyclePlayerUnits() {
-      const units = state.units.filter(u => u.owner === PLAYER_ID);
+      const activePlayer = getControllablePlayerId();
+      const units = state.units.filter(u => u.owner === activePlayer);
       if (!units.length) {
         logMsg("No player units available.", "bad");
         return;
@@ -1516,7 +1659,7 @@
         if (!cursor) return;
         selectTile(cursor.x, cursor.y);
         const unit = getUnitAt(cursor.x, cursor.y);
-        if (unit && unit.owner === PLAYER_ID) {
+        if (unit && unit.owner === getControllablePlayerId()) {
           state.selectedUnitId = unit.id;
           logMsg(`Selected ${UNIT_TYPES[unit.type].label} #${unit.id}`);
         } else if (state.selectedUnitId) {
@@ -1541,6 +1684,11 @@
       if (key === "r") {
         e.preventDefault();
         trainPlayerUnit("archer");
+        return;
+      }
+      if (key === "t" && isTwoPlayerMode()) {
+        e.preventDefault();
+        endTurn();
         return;
       }
 
@@ -1620,6 +1768,7 @@
       const barW = 170;
       const barH = 8;
       const xpGoal = levelXPGoal(state.playerLevel);
+      const activeName = getFaction(getControllablePlayerId()) ? getFaction(getControllablePlayerId()).name : "Player";
 
       ctx.fillStyle = "rgba(7, 12, 17, 0.6)";
       ctx.fillRect(8, 8, 230, 62);
@@ -1629,6 +1778,7 @@
       ctx.fillStyle = "#e8f7ff";
       ctx.font = "12px Verdana";
       ctx.textAlign = "left";
+      ctx.fillText(activeName, 16, 14);
       ctx.fillText(`Lv ${state.playerLevel}`, 16, 26);
       ctx.fillText(`Streak: x${state.streak}`, 16, 42);
       ctx.fillText(`Best: x${state.bestStreak}`, 16, 58);
@@ -1812,11 +1962,14 @@
     }
 
     function updateUI() {
-      const p = getFaction(PLAYER_ID);
-      const territory = countTerritory(PLAYER_ID);
-      const units = state.units.filter(u => u.owner === PLAYER_ID).length;
+      const activePlayer = getControllablePlayerId();
+      const p = getFaction(activePlayer);
+      const territory = countTerritory(activePlayer);
+      const units = state.units.filter(u => u.owner === activePlayer).length;
+      const activeName = p ? p.name : "Player";
 
       ui.resourceStats.innerHTML = `
+        <div>Faction:</div><div>${activeName}</div>
         <div>Population:</div><div>${p.resources.population.toFixed(1)} / ${p.resources.housing.toFixed(0)}</div>
         <div>Food:</div><div>${p.resources.food.toFixed(1)}</div>
         <div>Materials:</div><div>${p.resources.materials.toFixed(1)}</div>
@@ -1831,13 +1984,23 @@
       const streakText = state.streak > 0
         ? `Streak x${state.streak} (${state.streakTimer.toFixed(1)}s left)`
         : "No active streak. Keep acting to chain rewards.";
-      ui.momentumInfo.innerHTML = `
-        Level: <span class="good">${state.playerLevel}</span><br/>
-        XP: ${state.playerXP} / ${xpGoal}<br/>
-        ${streakText}<br/>
-        Best Streak: ${state.bestStreak}<br/>
-        <span class="accent">Press H for tutorial</span>
-      `;
+      if (isTwoPlayerMode()) {
+        const nextName = activePlayer === PLAYER_ID ? "Player 2" : "Player 1";
+        ui.momentumInfo.innerHTML = `
+          Active Turn: <span class="good">${activeName}</span><br/>
+          Press <kbd>T</kbd> or use End Turn.<br/>
+          Next: ${nextName}<br/>
+          <span class="accent">Press H for tutorial</span>
+        `;
+      } else {
+        ui.momentumInfo.innerHTML = `
+          Level: <span class="good">${state.playerLevel}</span><br/>
+          XP: ${state.playerXP} / ${xpGoal}<br/>
+          ${streakText}<br/>
+          Best Streak: ${state.bestStreak}<br/>
+          <span class="accent">Press H for tutorial</span>
+        `;
+      }
 
       if (state.selectedTile) {
         const { x, y } = state.selectedTile;
@@ -1855,18 +2018,29 @@
         ui.selectedInfo.textContent = "Click a tile.";
       }
 
-      const questHtml = state.quests.map(q => {
-        const prog = Math.min(q.progress(), q.target);
-        const done = q.done ? "<span class='good'>Completed</span>" : `${prog} / ${q.target}`;
-        return `<div style="margin-bottom:6px;">${q.title}: ${done}</div>`;
-      }).join("");
-      ui.questList.innerHTML = questHtml;
+      if (isTwoPlayerMode()) {
+        ui.questList.innerHTML = "<div>Quests are disabled in 2 Player mode.</div>";
+      } else {
+        const questHtml = state.quests.map(q => {
+          const prog = Math.min(q.progress(), q.target);
+          const done = q.done ? "<span class='good'>Completed</span>" : `${prog} / ${q.target}`;
+          return `<div style="margin-bottom:6px;">${q.title}: ${done}</div>`;
+        }).join("");
+        ui.questList.innerHTML = questHtml;
+      }
+
+      ui.endTurnBtn.hidden = !isTwoPlayerMode();
+      ui.endTurnBtn.disabled = state.gameOver;
+      ui.difficultySelect.disabled = isTwoPlayerMode();
+      ui.matchStatus.innerHTML = isTwoPlayerMode()
+        ? `<span class="good">2 Player:</span> ${activeName}'s turn`
+        : `<span class="good">Single Player</span> - AI ${state.aiDifficulty[0].toUpperCase()}${state.aiDifficulty.slice(1)}`;
 
       // Disable train buttons if no corresponding building selected.
       if (state.selectedTile) {
         const t = getTile(state.selectedTile.x, state.selectedTile.y);
-        ui.trainSoldier.disabled = !(t.owner === PLAYER_ID && t.building === "barracks");
-        ui.trainArcher.disabled = !(t.owner === PLAYER_ID && t.building === "archery");
+        ui.trainSoldier.disabled = !(t.owner === activePlayer && t.building === "barracks");
+        ui.trainArcher.disabled = !(t.owner === activePlayer && t.building === "archery");
       } else {
         ui.trainSoldier.disabled = true;
         ui.trainArcher.disabled = true;
@@ -1894,9 +2068,11 @@
           updateUI();
         }
 
-        if (state.aiTimer >= 2.1) {
-          aiTick();
-          state.aiTimer -= 2.1;
+        if (state.aiTimer >= state.aiTickInterval) {
+          if (!isTwoPlayerMode()) {
+            aiTick();
+          }
+          state.aiTimer -= state.aiTickInterval;
         }
 
         if (state.messageTimer >= 0.25) {
@@ -1913,12 +2089,73 @@
     // Boot
     // =====================
     function init() {
-      initMap();
+      bindSetupControls();
+      resetGame();
       const hideTutorial = localStorage.getItem("colonyCommand.hideTutorial") === "1";
       setTutorialOpen(!hideTutorial);
-      logMsg("Colony established. Expand and defeat enemy factions.", "accent");
       updateUI();
       requestAnimationFrame(gameLoop);
+    }
+
+    function bindSetupControls() {
+      ui.modeSelect.addEventListener("change", () => {
+        state.gameMode = ui.modeSelect.value === GAME_MODE.TWO_PLAYER ? GAME_MODE.TWO_PLAYER : GAME_MODE.SINGLE;
+        resetGame();
+      });
+
+      ui.difficultySelect.addEventListener("change", () => {
+        state.aiDifficulty = AI_DIFFICULTIES[ui.difficultySelect.value] ? ui.difficultySelect.value : "normal";
+        resetGame();
+      });
+
+      ui.endTurnBtn.addEventListener("click", () => {
+        endTurn();
+      });
+    }
+
+    function endTurn() {
+      if (!isTwoPlayerMode() || state.gameOver) return;
+      state.activePlayerId = state.activePlayerId === PLAYER_ID ? PLAYER_TWO_ID : PLAYER_ID;
+      state.selectedUnitId = null;
+      state.selectedTile = null;
+      logMsg(`Turn passed to ${getFaction(state.activePlayerId).name}`, "accent");
+      updateUI();
+    }
+
+    function resetGame() {
+      nextUnitId = 1;
+      state.units = [];
+      state.selectedTile = null;
+      state.selectedUnitId = null;
+      state.hoverTile = null;
+      state.cursorTile = { x: 4, y: Math.floor(GRID_H / 2) };
+      state.economyTimer = 0;
+      state.aiTimer = 0;
+      state.messageTimer = 0;
+      state.animTime = 0;
+      state.streakTimer = 0;
+      state.streak = 0;
+      state.bestStreak = 0;
+      state.playerXP = 0;
+      state.playerLevel = 1;
+      state.particles = [];
+      state.floatTexts = [];
+      state.screenShake = 0;
+      state.gameOver = false;
+      state.winnerText = "";
+      state.tickCount = 0;
+      state.quests = createQuests();
+      state.gameMode = ui.modeSelect.value === GAME_MODE.TWO_PLAYER ? GAME_MODE.TWO_PLAYER : GAME_MODE.SINGLE;
+      state.aiDifficulty = AI_DIFFICULTIES[ui.difficultySelect.value] ? ui.difficultySelect.value : "normal";
+      configureMatch();
+      initMap();
+
+      if (isTwoPlayerMode()) {
+        logMsg("2 Player match started. Player 1 goes first.", "accent");
+      } else {
+        logMsg(`Single player match started. AI difficulty: ${state.aiDifficulty}.`, "accent");
+      }
+      updateUI();
     }
 
     init();
