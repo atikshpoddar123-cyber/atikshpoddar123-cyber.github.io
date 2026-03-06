@@ -49,8 +49,10 @@
 
   .game-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:12px;}
   .game-card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:18px 14px;cursor:pointer;transition:all .25s;position:relative;overflow:hidden;animation:fadeIn .4s ease both;}
+  .game-card.hidden{display:none;}
   @keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
   .game-card:hover{transform:translateY(-5px);border-color:var(--cyan);box-shadow:0 0 22px var(--cyan);}
+  .game-card:focus-visible{outline:2px solid var(--yellow);outline-offset:3px;}
   .game-icon{font-size:32px;display:block;margin-bottom:10px;}
   .game-name{font-size:12px;font-weight:700;color:#e8f0ff;margin-bottom:4px;}
   .game-desc{font-size:10px;color:rgba(200,216,240,.4);line-height:1.5;}
@@ -72,6 +74,10 @@
   .load-bar-wrap{width:200px;height:4px;background:rgba(0,255,255,.1);margin-top:20px;}
   .load-bar{height:100%;background:var(--cyan);width:0;animation:lbar 2s ease-out forwards;}
   @keyframes lbar{to{width:100%}}
+  .section-group.hidden{display:none;}
+  #empty-state{display:none;position:relative;z-index:5;max-width:1440px;margin:0 auto 30px;padding:18px 20px;border:1px dashed rgba(0,255,255,.35);border-radius:8px;color:rgba(200,216,240,.8);text-align:center;letter-spacing:1px;text-transform:uppercase;font-size:12px;background:rgba(0,255,255,.03);}
+  #empty-state.show{display:block;}
+  footer{position:relative;z-index:5;margin:0 auto 30px;padding:0 20px;max-width:1440px;color:rgba(200,216,240,.45);font-family:'Press Start 2P',monospace;font-size:9px;letter-spacing:2px;text-align:center;}
 </style>
 </head>
 <body>
@@ -81,14 +87,14 @@
   <div class="logo">HYPER<span>ARCADE</span></div>
   <div class="tagline">// MORE BANGERS ADDED — NO CRAZYGAMES FEEDS //</div>
   <div class="stats-bar">
-    <div class="stat"><strong>14</strong>Games</div>
+    <div class="stat"><strong>19</strong>Games</div>
     <div class="stat"><strong>5</strong>Cats</div>
     <div class="stat"><strong>100%</strong>Free</div>
   </div>
 </header>
 
 <div class="marquee-wrap">
-  <div class="marquee">⛷️ SLOPE &nbsp;★&nbsp; 🛷 SNOW RIDER 3D &nbsp;★&nbsp; 🏈 RETRO BOWL &nbsp;★&nbsp; 🏴‍☠️ YOHOHO.IO &nbsp;★&nbsp; 🔫 GUN MAYHEM REDUX &nbsp;★&nbsp; 🚗 CARS SIMULATOR &nbsp;★&nbsp; 🧲 SCRAP METAL 3 &nbsp;★&nbsp; ⛷️ SLOPE &nbsp;★&nbsp; 🛷 SNOW RIDER 3D &nbsp;★&nbsp; 🏈 RETRO BOWL &nbsp;★&nbsp; 🏴‍☠️ YOHOHO.IO &nbsp;★&nbsp; 🔫 GUN MAYHEM REDUX &nbsp;★&nbsp; 🚗 CARS SIMULATOR &nbsp;★&nbsp; 🧲 SCRAP METAL 3 &nbsp;★&nbsp;</div>
+  <div class="marquee">⛷️ SLOPE &nbsp;★&nbsp; 🛷 SNOW RIDER 3D &nbsp;★&nbsp; 🏈 RETRO BOWL &nbsp;★&nbsp; 🏴‍☠️ YOHOHO.IO &nbsp;★&nbsp; 🔫 GUN MAYHEM REDUX &nbsp;★&nbsp; 🏎️ DRIFT BOSS &nbsp;★&nbsp; 💥 SMASH KARTS &nbsp;★&nbsp; 🌀 TUNNEL RUSH &nbsp;★&nbsp; 🏀 BASKETBALL STARS &nbsp;★&nbsp; 🥚 SHELL SHOCKERS &nbsp;★&nbsp; ⚔️ ZOMBSROYALE.IO &nbsp;★&nbsp; 🎯 KRUNKER &nbsp;★&nbsp; 🚀 RUN 3 &nbsp;★&nbsp; ⛷️ SLOPE &nbsp;★&nbsp;</div>
 </div>
 
 <div class="controls">
@@ -107,65 +113,59 @@
   <div class="section-group" data-section="racing">
     <div class="section-label">🏎️ Racing <span class="cnt">5 games</span></div>
     <div class="game-grid">
-      <div class="game-card" data-name="Slope" data-icon="⛷️" data-url="https://ubg44.github.io/Slope/">
+      <div class="game-card" data-name="Slope" data-icon="⛷️" data-url="https://slopegame.io/slope-game">
         <span class="badge hot">HOT</span><span class="game-icon">⛷️</span>
         <div class="game-name">Slope</div>
         <div class="game-desc">Endless downhill speed run</div>
         <span class="game-tag">Racing</span>
       </div>
-      <div class="game-card" data-name="Snow Rider 3D" data-icon="🛷" data-url="https://ubg44.github.io/SnowRider3D/">
+      <div class="game-card" data-name="Snow Rider 3D" data-icon="🛷" data-url="https://snowrider3d.com/">
         <span class="game-icon">🛷</span>
         <div class="game-name">Snow Rider 3D</div>
         <div class="game-desc">Dodge obstacles on snowy hills</div>
         <span class="game-tag">Racing</span>
       </div>
-      <div class="game-card" data-name="Cars Simulator" data-icon="🚗" data-url="https://ubg44.github.io/MadalinCarsMultiplayer/">
-        <span class="game-icon">🚗</span>
-        <div class="game-name">Cars Simulator</div>
-        <div class="game-desc">Open-world stunt driving</div>
-        <span class="game-tag">Racing</span>
-      </div>
-      <div class="game-card" data-name="Scrap Metal 3" data-icon="🧲" data-url="https://ubg44.github.io/ScrapMetal3/">
-        <span class="game-icon">🧲</span>
-        <div class="game-name">Scrap Metal 3</div>
-        <div class="game-desc">Crash, drift, and freestyle</div>
-        <span class="game-tag">Racing</span>
-      </div>
-      <div class="game-card" data-name="Drift Boss" data-icon="🌀" data-url="https://ubg44.github.io/DriftBoss/">
+      <div class="game-card" data-name="Drift Boss" data-icon="🌀" data-url="https://driftboss.io/">
         <span class="game-icon">🌀</span>
         <div class="game-name">Drift Boss</div>
         <div class="game-desc">One-tap precision drifting</div>
+        <span class="game-tag">Racing</span>
+      </div>
+      <div class="game-card" data-name="Smash Karts" data-icon="💥" data-url="https://smashkarts.io/">
+        <span class="game-icon">💥</span>
+        <div class="game-name">Smash Karts</div>
+        <div class="game-desc">Kart battles with powerups</div>
+        <span class="game-tag">Racing</span>
+      </div>
+      <div class="game-card" data-name="Tunnel Rush" data-icon="🌀" data-url="https://tunnelrush.io/">
+        <span class="game-icon">🌀</span>
+        <div class="game-name">Tunnel Rush</div>
+        <div class="game-desc">Neon speed dodging tunnel</div>
         <span class="game-tag">Racing</span>
       </div>
     </div>
   </div>
 
   <div class="section-group" data-section="sports">
-    <div class="section-label">⚽ Sports <span class="cnt">3 games</span></div>
+    <div class="section-label">⚽ Sports <span class="cnt">2 games</span></div>
     <div class="game-grid">
-      <div class="game-card" data-name="Retro Bowl" data-icon="🏈" data-url="https://ubg44.github.io/RetroBowl/">
+      <div class="game-card" data-name="Retro Bowl" data-icon="🏈" data-url="https://retro-bowl.me/">
         <span class="badge hot">HOT</span><span class="game-icon">🏈</span>
         <div class="game-name">Retro Bowl</div>
         <div class="game-desc">Build your football dynasty</div>
         <span class="game-tag">Sports</span>
       </div>
-      <div class="game-card" data-name="Basket Random" data-icon="🏀" data-url="https://ubg44.github.io/basket-random/">
+      <div class="game-card" data-name="Basketball Stars" data-icon="🏀" data-url="https://basketballstarsgame.io/">
         <span class="game-icon">🏀</span>
-        <div class="game-name">Basket Random</div>
-        <div class="game-desc">Physics basketball chaos</div>
-        <span class="game-tag">Sports</span>
-      </div>
-      <div class="game-card" data-name="Soccer Random" data-icon="⚽" data-url="https://ubg44.github.io/soccer-random/">
-        <span class="game-icon">⚽</span>
-        <div class="game-name">Soccer Random</div>
-        <div class="game-desc">Chaotic pixel soccer</div>
+        <div class="game-name">Basketball Stars</div>
+        <div class="game-desc">1v1 street basketball duels</div>
         <span class="game-tag">Sports</span>
       </div>
     </div>
   </div>
 
   <div class="section-group" data-section="io">
-    <div class="section-label">🌐 .io <span class="cnt">2 games</span></div>
+    <div class="section-label">🌐 .io <span class="cnt">6 games</span></div>
     <div class="game-grid">
       <div class="game-card" data-name="YoHoHo.io" data-icon="🏴‍☠️" data-url="https://yohoho.io/">
         <span class="badge hot">HOT</span><span class="game-icon">🏴‍☠️</span>
@@ -177,6 +177,30 @@
         <span class="game-icon">🥚</span>
         <div class="game-name">Shell Shockers</div>
         <div class="game-desc">Online egg shooter madness</div>
+        <span class="game-tag">.io</span>
+      </div>
+      <div class="game-card" data-name="ZombsRoyale.io" data-icon="⚔️" data-url="https://zombsroyale.io/">
+        <span class="game-icon">⚔️</span>
+        <div class="game-name">ZombsRoyale.io</div>
+        <div class="game-desc">Top-down battle royale fights</div>
+        <span class="game-tag">.io</span>
+      </div>
+      <div class="game-card" data-name="Krunker" data-icon="🎯" data-url="https://krunker.io/">
+        <span class="game-icon">🎯</span>
+        <div class="game-name">Krunker</div>
+        <div class="game-desc">Fast browser FPS arena</div>
+        <span class="game-tag">.io</span>
+      </div>
+      <div class="game-card" data-name="Bonk.io" data-icon="⚪" data-url="https://bonk.io/">
+        <span class="game-icon">⚪</span>
+        <div class="game-name">Bonk.io</div>
+        <div class="game-desc">Physics arena knockouts</div>
+        <span class="game-tag">.io</span>
+      </div>
+      <div class="game-card" data-name="Ev.io" data-icon="🤖" data-url="https://ev.io/">
+        <span class="game-icon">🤖</span>
+        <div class="game-name">Ev.io</div>
+        <div class="game-desc">Sci-fi arena shooter</div>
         <span class="game-tag">.io</span>
       </div>
     </div>
@@ -201,23 +225,36 @@
   </div>
 
   <div class="section-group" data-section="action">
-    <div class="section-label">🔥 Action <span class="cnt">2 games</span></div>
+    <div class="section-label">🔥 Action <span class="cnt">4 games</span></div>
     <div class="game-grid">
-      <div class="game-card" data-name="Gun Mayhem Redux" data-icon="🔫" data-url="https://ubg44.github.io/GunMayhem2/">
+      <div class="game-card" data-name="Gun Mayhem Redux" data-icon="🔫" data-url="https://gunmayhem.io/">
         <span class="badge hot">HOT</span><span class="game-icon">🔫</span>
         <div class="game-name">Gun Mayhem Redux</div>
         <div class="game-desc">Arena shooter platform battles</div>
         <span class="game-tag">Action</span>
       </div>
-      <div class="game-card" data-name="Run 3" data-icon="🏃" data-url="https://ubg44.github.io/Run3/">
+      <div class="game-card" data-name="Run 3" data-icon="🏃" data-url="https://run3.io/">
         <span class="game-icon">🏃</span>
         <div class="game-name">Run 3</div>
         <div class="game-desc">Gravity tunnel endless runner</div>
         <span class="game-tag">Action</span>
       </div>
+      <div class="game-card" data-name="Subway Surfers" data-icon="🚇" data-url="https://subwaysurfers.com/">
+        <span class="game-icon">🚇</span>
+        <div class="game-name">Subway Surfers</div>
+        <div class="game-desc">Endless urban runner</div>
+        <span class="game-tag">Action</span>
+      </div>
+      <div class="game-card" data-name="Diep.io" data-icon="🛡️" data-url="https://diep.io/">
+        <span class="game-icon">🛡️</span>
+        <div class="game-name">Diep.io</div>
+        <div class="game-desc">Tank battles and upgrades</div>
+        <span class="game-tag">Action</span>
+      </div>
     </div>
   </div>
 </main>
+<div id="empty-state">No games match this filter.</div>
 
 <footer>HYPERARCADE // NEON V5.1 // ESC TO CLOSE</footer>
 
@@ -251,15 +288,29 @@
   const modal=document.getElementById('game-modal');
   const frame=document.getElementById('game-frame');
   const loading=document.getElementById('loading');
+  const searchInput=document.getElementById('search');
+  const emptyState=document.getElementById('empty-state');
+  let activeCategory='all';
+
+  function openGame(card){
+    document.getElementById('modal-title').textContent=card.dataset.name;
+    document.getElementById('modal-icon').textContent=card.dataset.icon;
+    loading.classList.remove('hide');
+    frame.src=card.dataset.url;
+    modal.classList.add('open');
+    document.body.style.overflow='hidden';
+  }
 
   document.querySelectorAll('.game-card').forEach(card=>{
-    card.addEventListener('click',()=>{
-      document.getElementById('modal-title').textContent=card.dataset.name;
-      document.getElementById('modal-icon').textContent=card.dataset.icon;
-      loading.classList.remove('hide');
-      frame.src=card.dataset.url;
-      modal.classList.add('open');
-      document.body.style.overflow='hidden';
+    card.setAttribute('role','button');
+    card.setAttribute('tabindex','0');
+    card.setAttribute('aria-label',`Open ${card.dataset.name}`);
+    card.addEventListener('click',()=>openGame(card));
+    card.addEventListener('keydown',(e)=>{
+      if(e.key==='Enter' || e.key===' '){
+        e.preventDefault();
+        openGame(card);
+      }
     });
   });
 
@@ -277,24 +328,50 @@
     else document.exitFullscreen();
   }
 
-  // Search & Filter Logic
-  document.getElementById('search').addEventListener('input',function(){
-    const q=this.value.toLowerCase();
-    document.querySelectorAll('.game-card').forEach(c=>{
-      c.style.display=c.dataset.name.toLowerCase().includes(q)?'block':'none';
+  function applyFilters(){
+    const q=searchInput.value.trim().toLowerCase();
+    let totalVisible=0;
+
+    document.querySelectorAll('.section-group').forEach(section=>{
+      const sectionCat=section.dataset.section;
+      const inCategory=(activeCategory==='all' || activeCategory===sectionCat);
+      let sectionVisibleCount=0;
+
+      section.querySelectorAll('.game-card').forEach(card=>{
+        const matchesSearch=card.dataset.name.toLowerCase().includes(q);
+        const visible=inCategory && matchesSearch;
+        card.classList.toggle('hidden',!visible);
+        if(visible) sectionVisibleCount++;
+      });
+
+      section.classList.toggle('hidden',sectionVisibleCount===0);
+      totalVisible+=sectionVisibleCount;
     });
-  });
+
+    emptyState.classList.toggle('show',totalVisible===0);
+  }
+
+  // Search & Filter Logic
+  searchInput.addEventListener('input',applyFilters);
 
   document.querySelectorAll('.cat-btn').forEach(btn=>{
     btn.addEventListener('click',()=>{
-      const cat=btn.dataset.cat;
+      activeCategory=btn.dataset.cat;
       document.querySelectorAll('.cat-btn').forEach(b=>b.classList.remove('active'));
       btn.classList.add('active');
-      document.querySelectorAll('.section-group').forEach(sg=>{
-        sg.style.display=(cat==='all' || sg.dataset.section===cat)?'block':'none';
-      });
+      applyFilters();
     });
   });
+
+  document.addEventListener('keydown',(e)=>{
+    if(e.key==='Escape' && modal.classList.contains('open')) closeModal();
+  });
+
+  modal.addEventListener('click',(e)=>{
+    if(e.target===modal) closeModal();
+  });
+
+  applyFilters();
 </script>
 </body>
 </html>
