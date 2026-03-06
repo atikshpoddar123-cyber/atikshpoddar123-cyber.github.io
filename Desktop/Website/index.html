@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HYPERARCADE // GAME VAULT</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Chakra+Petch:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cyan:#00ffff; --pink:#ff0090; --green:#39ff14;
+    --yellow:#ffe600; --orange:#ff6b00; --bg:#07070f;
+    --card:#0e0e1e; --border:rgba(0,255,255,0.12); --text:#c8d8f0;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{background:var(--bg);color:var(--text);font-family:'Chakra Petch',sans-serif;min-height:100vh;overflow-x:hidden;cursor:crosshair;}
+  body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.07) 2px,rgba(0,0,0,0.07) 4px);pointer-events:none;z-index:9998;}
+  body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,255,255,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,255,0.025) 1px,transparent 1px);background-size:50px 50px;pointer-events:none;z-index:0;}
+
+  #particles{position:fixed;inset:0;pointer-events:none;z-index:1;overflow:hidden;}
+  .p{position:absolute;width:2px;height:2px;border-radius:50%;animation:pfloat linear infinite;opacity:0;}
+  @keyframes pfloat{0%{transform:translateY(110vh);opacity:0;}10%{opacity:.8;}90%{opacity:.3;}100%{transform:translateY(-10vh) translateX(30px);opacity:0;}}
+
+  header{position:relative;z-index:10;padding:44px 20px 24px;text-align:center;border-bottom:1px solid var(--border);background:linear-gradient(180deg,rgba(0,255,255,0.05) 0%,transparent 100%);}
+  .logo{font-family:'Press Start 2P',monospace;font-size:clamp(18px,4vw,44px);color:var(--cyan);text-shadow:0 0 10px var(--cyan),0 0 30px var(--cyan),0 0 70px rgba(0,255,255,.35);letter-spacing:6px;animation:glitch 5s infinite;display:inline-block;}
+  .logo span{color:var(--pink);text-shadow:0 0 10px var(--pink),0 0 30px var(--pink);}
+  @keyframes glitch{0%,88%,100%{transform:none;filter:none;}90%{transform:skewX(-3deg) translateX(3px);filter:hue-rotate(90deg);}92%{transform:skewX(2deg) translateX(-2px);filter:hue-rotate(-90deg);}94%{transform:none;filter:none;}97%{transform:translateX(4px);filter:brightness(1.6);}}
+  .tagline{color:var(--green);font-size:10px;letter-spacing:7px;text-transform:uppercase;margin-top:10px;opacity:.75;}
+  .stats-bar{display:flex;justify-content:center;gap:40px;margin-top:20px;flex-wrap:wrap;}
+  .stat{text-align:center;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(200,216,240,.45);}
+  .stat strong{display:block;font-family:'Press Start 2P',monospace;font-size:16px;color:var(--yellow);text-shadow:0 0 12px var(--yellow);margin-bottom:4px;}
+
+  .marquee-wrap{overflow:hidden;background:rgba(0,255,255,.04);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:10px 0;white-space:nowrap;}
+  .marquee{display:inline-block;animation:scroll 50s linear infinite;font-family:'Press Start 2P',monospace;font-size:9px;color:rgba(0,255,255,.35);letter-spacing:4px;}
+  @keyframes scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+  .controls{position:sticky;top:0;z-index:100;background:rgba(7,7,15,.96);backdrop-filter:blur(24px);border-bottom:1px solid var(--border);padding:12px 20px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;}
+  .search-wrap{position:relative;flex:1;min-width:180px;}
+  .search-wrap::before{content:'🔍';position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:13px;pointer-events:none;}
+  input[type=search]{width:100%;padding:9px 14px 9px 38px;background:var(--card);border:1px solid var(--border);border-radius:6px;color:var(--cyan);font-family:'Chakra Petch',sans-serif;font-size:13px;outline:none;transition:border-color .2s,box-shadow .2s;}
+  input[type=search]:focus{border-color:var(--cyan);box-shadow:0 0 18px rgba(0,255,255,.15);}
+  .cats{display:flex;gap:7px;flex-wrap:wrap;}
+  .cat-btn{padding:7px 12px;background:transparent;border:1px solid rgba(255,255,255,.1);border-radius:5px;color:rgba(200,216,240,.55);font-family:'Chakra Petch',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:all .2s;}
+  .cat-btn.active{background:rgba(0,255,255,.1);border-color:var(--cyan);color:var(--cyan);}
+
+  main{position:relative;z-index:5;max-width:1440px;margin:0 auto;padding:20px 20px 70px;}
+  .section-label{font-family:'Press Start 2P',monospace;font-size:9px;color:var(--pink);letter-spacing:3px;text-transform:uppercase;margin:40px 0 16px;padding-left:12px;border-left:3px solid var(--pink);display:flex;align-items:center;gap:10px;}
+  .section-label .cnt{font-family:'Chakra Petch',sans-serif;font-size:10px;background:rgba(255,0,144,.12);border:1px solid rgba(255,0,144,.3);padding:2px 7px;border-radius:3px;}
+
+  .game-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:12px;}
+  .game-card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:18px 14px;cursor:pointer;transition:all .25s;position:relative;overflow:hidden;animation:fadeIn .4s ease both;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+  .game-card:hover{transform:translateY(-5px);border-color:var(--cyan);box-shadow:0 0 22px var(--cyan);}
+  .game-icon{font-size:32px;display:block;margin-bottom:10px;}
+  .game-name{font-size:12px;font-weight:700;color:#e8f0ff;margin-bottom:4px;}
+  .game-desc{font-size:10px;color:rgba(200,216,240,.4);line-height:1.5;}
+  .game-tag{display:inline-block;margin-top:9px;font-size:8px;letter-spacing:2px;text-transform:uppercase;padding:2px 7px;background:rgba(0,255,255,.1);color:var(--cyan);border-radius:3px;}
+  .badge{position:absolute;top:9px;left:9px;font-family:'Press Start 2P',monospace;font-size:6px;padding:2px 5px;border-radius:3px;}
+  .badge.hot{background:var(--pink);color:#fff;}
+
+  #game-modal{display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.97);flex-direction:column;}
+  #game-modal.open{display:flex;}
+  .modal-bar{display:flex;align-items:center;gap:10px;padding:9px 14px;background:#08081a;border-bottom:1px solid var(--border);}
+  .modal-title{font-family:'Press Start 2P',monospace;font-size:10px;color:var(--cyan);flex:1;}
+  .mbtn{padding:7px 13px;border-radius:5px;font-family:'Chakra Petch',sans-serif;font-size:11px;font-weight:700;cursor:pointer;border:1px solid;background:transparent;color:var(--text);text-decoration:none;}
+  .mbtn-close{border-color:var(--pink);color:var(--pink);}
+  #frame-wrap{flex:1;position:relative;background:#000;}
+  #game-frame{width:100%;height:100%;border:none;}
+  
+  #loading{position:absolute;inset:0;background:#07070f;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:5;}
+  #loading.hide{display:none;}
+  .load-bar-wrap{width:200px;height:4px;background:rgba(0,255,255,.1);margin-top:20px;}
+  .load-bar{height:100%;background:var(--cyan);width:0;animation:lbar 2s ease-out forwards;}
+  @keyframes lbar{to{width:100%}}
+</style>
+</head>
+<body>
+<div id="particles"></div>
+
+<header>
+  <div class="logo">HYPER<span>ARCADE</span></div>
+  <div class="tagline">// MORE BANGERS ADDED — NO CRAZYGAMES FEEDS //</div>
+  <div class="stats-bar">
+    <div class="stat"><strong>14</strong>Games</div>
+    <div class="stat"><strong>5</strong>Cats</div>
+    <div class="stat"><strong>100%</strong>Free</div>
+  </div>
+</header>
+
+<div class="marquee-wrap">
+  <div class="marquee">⛷️ SLOPE &nbsp;★&nbsp; 🛷 SNOW RIDER 3D &nbsp;★&nbsp; 🏈 RETRO BOWL &nbsp;★&nbsp; 🏴‍☠️ YOHOHO.IO &nbsp;★&nbsp; 🔫 GUN MAYHEM REDUX &nbsp;★&nbsp; 🚗 CARS SIMULATOR &nbsp;★&nbsp; 🧲 SCRAP METAL 3 &nbsp;★&nbsp; ⛷️ SLOPE &nbsp;★&nbsp; 🛷 SNOW RIDER 3D &nbsp;★&nbsp; 🏈 RETRO BOWL &nbsp;★&nbsp; 🏴‍☠️ YOHOHO.IO &nbsp;★&nbsp; 🔫 GUN MAYHEM REDUX &nbsp;★&nbsp; 🚗 CARS SIMULATOR &nbsp;★&nbsp; 🧲 SCRAP METAL 3 &nbsp;★&nbsp;</div>
+</div>
+
+<div class="controls">
+  <div class="search-wrap"><input type="search" id="search" placeholder="Search games..."></div>
+  <div class="cats">
+    <button class="cat-btn active" data-cat="all">All</button>
+    <button class="cat-btn" data-cat="racing">🏎️ Racing</button>
+    <button class="cat-btn" data-cat="sports">⚽ Sports</button>
+    <button class="cat-btn" data-cat="io">🌐 .io</button>
+    <button class="cat-btn" data-cat="puzzle">🧩 Puzzle</button>
+    <button class="cat-btn" data-cat="action">🔥 Action</button>
+  </div>
+</div>
+
+<main id="main">
+  <div class="section-group" data-section="racing">
+    <div class="section-label">🏎️ Racing <span class="cnt">5 games</span></div>
+    <div class="game-grid">
+      <div class="game-card" data-name="Slope" data-icon="⛷️" data-url="https://ubg44.github.io/Slope/">
+        <span class="badge hot">HOT</span><span class="game-icon">⛷️</span>
+        <div class="game-name">Slope</div>
+        <div class="game-desc">Endless downhill speed run</div>
+        <span class="game-tag">Racing</span>
+      </div>
+      <div class="game-card" data-name="Snow Rider 3D" data-icon="🛷" data-url="https://ubg44.github.io/SnowRider3D/">
+        <span class="game-icon">🛷</span>
+        <div class="game-name">Snow Rider 3D</div>
+        <div class="game-desc">Dodge obstacles on snowy hills</div>
+        <span class="game-tag">Racing</span>
+      </div>
+      <div class="game-card" data-name="Cars Simulator" data-icon="🚗" data-url="https://ubg44.github.io/MadalinCarsMultiplayer/">
+        <span class="game-icon">🚗</span>
+        <div class="game-name">Cars Simulator</div>
+        <div class="game-desc">Open-world stunt driving</div>
+        <span class="game-tag">Racing</span>
+      </div>
+      <div class="game-card" data-name="Scrap Metal 3" data-icon="🧲" data-url="https://ubg44.github.io/ScrapMetal3/">
+        <span class="game-icon">🧲</span>
+        <div class="game-name">Scrap Metal 3</div>
+        <div class="game-desc">Crash, drift, and freestyle</div>
+        <span class="game-tag">Racing</span>
+      </div>
+      <div class="game-card" data-name="Drift Boss" data-icon="🌀" data-url="https://ubg44.github.io/DriftBoss/">
+        <span class="game-icon">🌀</span>
+        <div class="game-name">Drift Boss</div>
+        <div class="game-desc">One-tap precision drifting</div>
+        <span class="game-tag">Racing</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-group" data-section="sports">
+    <div class="section-label">⚽ Sports <span class="cnt">3 games</span></div>
+    <div class="game-grid">
+      <div class="game-card" data-name="Retro Bowl" data-icon="🏈" data-url="https://ubg44.github.io/RetroBowl/">
+        <span class="badge hot">HOT</span><span class="game-icon">🏈</span>
+        <div class="game-name">Retro Bowl</div>
+        <div class="game-desc">Build your football dynasty</div>
+        <span class="game-tag">Sports</span>
+      </div>
+      <div class="game-card" data-name="Basket Random" data-icon="🏀" data-url="https://ubg44.github.io/basket-random/">
+        <span class="game-icon">🏀</span>
+        <div class="game-name">Basket Random</div>
+        <div class="game-desc">Physics basketball chaos</div>
+        <span class="game-tag">Sports</span>
+      </div>
+      <div class="game-card" data-name="Soccer Random" data-icon="⚽" data-url="https://ubg44.github.io/soccer-random/">
+        <span class="game-icon">⚽</span>
+        <div class="game-name">Soccer Random</div>
+        <div class="game-desc">Chaotic pixel soccer</div>
+        <span class="game-tag">Sports</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-group" data-section="io">
+    <div class="section-label">🌐 .io <span class="cnt">2 games</span></div>
+    <div class="game-grid">
+      <div class="game-card" data-name="YoHoHo.io" data-icon="🏴‍☠️" data-url="https://yohoho.io/">
+        <span class="badge hot">HOT</span><span class="game-icon">🏴‍☠️</span>
+        <div class="game-name">YoHoHo.io</div>
+        <div class="game-desc">Pirate battle royale arena</div>
+        <span class="game-tag">.io</span>
+      </div>
+      <div class="game-card" data-name="Shell Shockers" data-icon="🥚" data-url="https://shellshock.io/">
+        <span class="game-icon">🥚</span>
+        <div class="game-name">Shell Shockers</div>
+        <div class="game-desc">Online egg shooter madness</div>
+        <span class="game-tag">.io</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-group" data-section="puzzle">
+    <div class="section-label">🧩 Puzzle <span class="cnt">2 games</span></div>
+    <div class="game-grid">
+      <div class="game-card" data-name="2048" data-icon="🔢" data-url="https://zv1y2i8p.play.gamezop.com/g/NyM_JGWcx">
+        <span class="game-icon">🔢</span>
+        <div class="game-name">2048</div>
+        <div class="game-desc">Merge the tiles</div>
+        <span class="game-tag">Puzzle</span>
+      </div>
+      <div class="game-card" data-name="Ludo With Friends" data-icon="🎲" data-url="https://zv1y2i8p.play.gamezop.com/g/SkhljT2fdgb">
+        <span class="game-icon">🎲</span>
+        <div class="game-name">Ludo</div>
+        <div class="game-desc">Classic board game</div>
+        <span class="game-tag">Puzzle</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-group" data-section="action">
+    <div class="section-label">🔥 Action <span class="cnt">2 games</span></div>
+    <div class="game-grid">
+      <div class="game-card" data-name="Gun Mayhem Redux" data-icon="🔫" data-url="https://ubg44.github.io/GunMayhem2/">
+        <span class="badge hot">HOT</span><span class="game-icon">🔫</span>
+        <div class="game-name">Gun Mayhem Redux</div>
+        <div class="game-desc">Arena shooter platform battles</div>
+        <span class="game-tag">Action</span>
+      </div>
+      <div class="game-card" data-name="Run 3" data-icon="🏃" data-url="https://ubg44.github.io/Run3/">
+        <span class="game-icon">🏃</span>
+        <div class="game-name">Run 3</div>
+        <div class="game-desc">Gravity tunnel endless runner</div>
+        <span class="game-tag">Action</span>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>HYPERARCADE // NEON V5.1 // ESC TO CLOSE</footer>
+
+<div id="game-modal">
+  <div class="modal-bar">
+    <span id="modal-icon">🎮</span> <span class="modal-title" id="modal-title">Loading...</span>
+    <button class="mbtn" onclick="toggleFS()">Fullscreen</button>
+    <button class="mbtn mbtn-close" onclick="closeModal()">Close</button>
+  </div>
+  <div id="frame-wrap">
+    <div id="loading">
+      <div style="font-family:'Press Start 2P'; font-size:10px; color:var(--cyan);">LOADING GAME...</div>
+      <div class="load-bar-wrap"><div class="load-bar"></div></div>
+    </div>
+    <iframe id="game-frame" 
+            sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox" 
+            allow="fullscreen; autoplay; gamepad; microphone; camera" 
+            src=""></iframe>
+  </div>
+</div>
+
+<script>
+  // Restore Particles
+  const pc=document.getElementById('particles');
+  for(let i=0;i<40;i++){
+    const p=document.createElement('div'); p.className='p';
+    p.style.cssText=`left:${Math.random()*100}%;background:#00ffff;animation-duration:${8+Math.random()*14}s;animation-delay:${Math.random()*14}s;`;
+    pc.appendChild(p);
+  }
+
+  const modal=document.getElementById('game-modal');
+  const frame=document.getElementById('game-frame');
+  const loading=document.getElementById('loading');
+
+  document.querySelectorAll('.game-card').forEach(card=>{
+    card.addEventListener('click',()=>{
+      document.getElementById('modal-title').textContent=card.dataset.name;
+      document.getElementById('modal-icon').textContent=card.dataset.icon;
+      loading.classList.remove('hide');
+      frame.src=card.dataset.url;
+      modal.classList.add('open');
+      document.body.style.overflow='hidden';
+    });
+  });
+
+  frame.onload=()=>loading.classList.add('hide');
+
+  function closeModal(){
+    modal.classList.remove('open');
+    frame.src='';
+    document.body.style.overflow='';
+  }
+
+  function toggleFS(){
+    const wrap=document.getElementById('frame-wrap');
+    if(!document.fullscreenElement) wrap.requestFullscreen();
+    else document.exitFullscreen();
+  }
+
+  // Search & Filter Logic
+  document.getElementById('search').addEventListener('input',function(){
+    const q=this.value.toLowerCase();
+    document.querySelectorAll('.game-card').forEach(c=>{
+      c.style.display=c.dataset.name.toLowerCase().includes(q)?'block':'none';
+    });
+  });
+
+  document.querySelectorAll('.cat-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const cat=btn.dataset.cat;
+      document.querySelectorAll('.cat-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('.section-group').forEach(sg=>{
+        sg.style.display=(cat==='all' || sg.dataset.section===cat)?'block':'none';
+      });
+    });
+  });
+</script>
+</body>
+</html>
