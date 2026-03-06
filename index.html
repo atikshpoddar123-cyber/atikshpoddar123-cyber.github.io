@@ -3,17 +3,19 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Grid Colony Strategy</title>
+  <title>Canvas</title>
   <style>
     :root {
-      --bg: #12202b;
-      --panel: #1d2f3d;
-      --panel-2: #273d4f;
-      --text: #e8f1f8;
-      --muted: #a9c0d1;
-      --accent: #ffbf47;
-      --good: #72e29a;
-      --bad: #ff7d7d;
+      --bg: #091118;
+      --bg-2: #101d28;
+      --panel: rgba(18, 34, 46, 0.88);
+      --panel-2: rgba(24, 45, 61, 0.92);
+      --text: #ebf6ff;
+      --muted: #9fc0d6;
+      --accent: #ffb347;
+      --good: #7be3b0;
+      --bad: #ff8f8f;
+      --stroke: rgba(137, 186, 216, 0.38);
     }
 
     * {
@@ -22,29 +24,33 @@
 
     body {
       margin: 0;
-      font-family: "Trebuchet MS", Verdana, sans-serif;
-      background: radial-gradient(circle at 20% 10%, #1f3648 0%, #0f1a23 70%);
+      font-family: "Avenir Next", "Segoe UI", "Trebuchet MS", sans-serif;
+      background:
+        radial-gradient(circle at 10% 15%, #1e3f58 0%, transparent 36%),
+        radial-gradient(circle at 88% 0%, #143a4b 0%, transparent 28%),
+        linear-gradient(160deg, var(--bg) 0%, var(--bg-2) 100%);
       color: var(--text);
       min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 14px;
+      padding: 18px;
     }
 
     #gameWrap {
       display: grid;
       grid-template-columns: auto 320px;
-      gap: 12px;
+      gap: 14px;
       align-items: start;
       width: min(1240px, 100%);
     }
 
     #gameCanvas {
-      border: 2px solid #375267;
-      background: #21313f;
+      border: 1px solid var(--stroke);
+      border-radius: 14px;
+      background: #1b303f;
       image-rendering: pixelated;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+      box-shadow: 0 14px 34px rgba(0, 0, 0, 0.45), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
       max-width: 100%;
       height: auto;
       touch-action: none;
@@ -52,20 +58,20 @@
 
     #ui {
       background: linear-gradient(180deg, var(--panel) 0%, var(--panel-2) 100%);
-      border: 1px solid #3a586f;
-      border-radius: 8px;
-      padding: 10px;
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--stroke);
+      border-radius: 14px;
+      padding: 12px;
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.04) inset;
       max-height: 90vh;
       overflow: auto;
     }
 
     .card {
-      border: 1px solid #3e6076;
-      border-radius: 8px;
-      padding: 8px;
-      margin-bottom: 8px;
-      background: rgba(10, 20, 28, 0.2);
+      border: 1px solid rgba(124, 176, 208, 0.26);
+      border-radius: 12px;
+      padding: 10px;
+      margin-bottom: 10px;
+      background: linear-gradient(180deg, rgba(10, 22, 30, 0.45), rgba(8, 17, 24, 0.35));
     }
 
     .tutorial {
@@ -95,16 +101,24 @@
     }
 
     h1 {
-      font-size: 18px;
+      font-size: 22px;
       margin: 0 0 8px;
-      color: #f7fafc;
+      color: #f9fcff;
+      letter-spacing: 0.4px;
+    }
+
+    .uiSubhead {
+      margin: -4px 0 10px;
+      font-size: 12px;
+      color: #9dc0d6;
+      letter-spacing: 0.25px;
     }
 
     h2 {
       font-size: 14px;
       margin: 0 0 6px;
-      color: #cbe7ff;
-      letter-spacing: 0.3px;
+      color: #d2ecff;
+      letter-spacing: 0.35px;
     }
 
     .stats {
@@ -121,17 +135,19 @@
     button {
       width: 100%;
       margin: 4px 0;
-      border: 1px solid #4f6f85;
-      background: #325367;
+      border: 1px solid rgba(118, 180, 218, 0.55);
+      background: linear-gradient(180deg, #2f607c 0%, #274f67 100%);
       color: white;
-      border-radius: 6px;
-      padding: 6px 7px;
+      border-radius: 8px;
+      padding: 7px 8px;
       font-size: 12px;
       cursor: pointer;
+      transition: transform 0.12s ease, filter 0.12s ease;
     }
 
     button:hover {
-      background: #3c667f;
+      filter: brightness(1.08);
+      transform: translateY(-1px);
     }
 
     button:disabled {
@@ -142,10 +158,10 @@
     select {
       width: 100%;
       margin: 4px 0;
-      border: 1px solid #4f6f85;
-      background: #27485c;
+      border: 1px solid rgba(118, 180, 218, 0.5);
+      background: #1e4055;
       color: white;
-      border-radius: 6px;
+      border-radius: 8px;
       padding: 6px 7px;
       font-size: 12px;
     }
@@ -160,10 +176,10 @@
       overflow: auto;
       font-size: 12px;
       line-height: 1.35;
-      background: rgba(8, 15, 20, 0.45);
-      border-radius: 6px;
+      background: rgba(6, 13, 18, 0.5);
+      border-radius: 8px;
       padding: 6px;
-      border: 1px solid #365163;
+      border: 1px solid rgba(116, 165, 196, 0.33);
     }
 
     .good { color: var(--good); }
@@ -194,9 +210,9 @@
 
     .tutorialPanel {
       width: min(760px, 100%);
-      border-radius: 10px;
-      border: 1px solid #4d758f;
-      background: linear-gradient(180deg, #203646 0%, #172732 100%);
+      border-radius: 14px;
+      border: 1px solid rgba(141, 189, 219, 0.55);
+      background: linear-gradient(180deg, #1f3a4d 0%, #172938 100%);
       box-shadow: 0 22px 46px rgba(0, 0, 0, 0.5);
       padding: 14px;
       font-size: 13px;
@@ -234,6 +250,68 @@
       margin: 0;
     }
 
+    .homeOverlay {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(99, 177, 231, 0.24), transparent 40%),
+        radial-gradient(circle at 80% 0%, rgba(87, 174, 151, 0.16), transparent 34%),
+        rgba(5, 11, 16, 0.85);
+      backdrop-filter: blur(4px);
+      z-index: 30;
+      padding: 16px;
+    }
+
+    .homeOverlay[hidden] {
+      display: none;
+    }
+
+    .homePanel {
+      width: min(620px, 100%);
+      border-radius: 16px;
+      border: 1px solid rgba(148, 205, 241, 0.58);
+      background: linear-gradient(180deg, rgba(16, 36, 50, 0.95), rgba(12, 27, 38, 0.95));
+      box-shadow: 0 24px 52px rgba(0, 0, 0, 0.55);
+      padding: 20px;
+    }
+
+    .homeTitle {
+      margin: 0;
+      font-size: 36px;
+      letter-spacing: 0.8px;
+      color: #f4fbff;
+    }
+
+    .versionPill {
+      display: inline-block;
+      margin-top: 8px;
+      font-size: 12px;
+      border: 1px solid rgba(153, 209, 241, 0.45);
+      border-radius: 999px;
+      padding: 4px 10px;
+      color: #d8f2ff;
+      background: rgba(33, 73, 99, 0.45);
+    }
+
+    .homeGrid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .playBtn {
+      margin-top: 14px;
+      padding: 10px 12px;
+      font-size: 15px;
+      font-weight: 600;
+      background: linear-gradient(180deg, #3e809f 0%, #306881 100%);
+      border-color: rgba(146, 210, 244, 0.75);
+    }
+
     @media (max-width: 1050px) {
       #gameWrap {
         grid-template-columns: 1fr;
@@ -248,17 +326,45 @@
   </style>
 </head>
 <body>
+  <div id="homeOverlay" class="homeOverlay">
+    <div class="homePanel">
+      <h1 class="homeTitle">Canvas</h1>
+      <div id="versionBadge" class="versionPill">Version</div>
+      <p class="muted" style="margin:10px 0 0;">Build your kingdom, control territory, and overwhelm rival colonies.</p>
+      <div class="homeGrid">
+        <div>
+          <label class="muted" for="homeModeSelect">Mode</label>
+          <select id="homeModeSelect">
+            <option value="single" selected>Single Player (vs AI)</option>
+            <option value="two-player">2 Player (Action Turns)</option>
+          </select>
+        </div>
+        <div>
+          <label class="muted" for="homeDifficultySelect">AI Difficulty</label>
+          <select id="homeDifficultySelect">
+            <option value="easy">Easy</option>
+            <option value="normal" selected>Normal</option>
+            <option value="hard">Hard</option>
+          </select>
+        </div>
+      </div>
+      <button id="playBtn" class="playBtn">Play Canvas</button>
+      <div class="muted" style="margin-top:8px;">Tip: press <kbd>H</kbd> in-game for the interactive tutorial.</div>
+    </div>
+  </div>
+
   <div id="tutorialOverlay" class="tutorialOverlay">
     <div class="tutorialPanel">
-      <h2>How To Play Colony Command</h2>
-      <div class="muted">Fast loop: capture, build, train, repeat. Keep your streak alive for bonus drops.</div>
+      <h2>How To Play Canvas</h2>
+      <div class="muted">Simple loop: capture, build, train soldiers, and push outward.</div>
       <div class="tutorialGrid">
-        <div class="tutorialStep"><strong>1. Capture</strong><br/>Click a nearby tile and press <kbd>E</kbd> to claim it.</div>
-        <div class="tutorialStep"><strong>2. Snowball Economy</strong><br/>Use <kbd>1</kbd> House and <kbd>2</kbd> Market early.</div>
-        <div class="tutorialStep"><strong>3. Train Units</strong><br/>Build Barracks/Archery, then use <kbd>Q</kbd> / <kbd>R</kbd>.</div>
-        <div class="tutorialStep"><strong>4. Keep Momentum</strong><br/>Do actions quickly to stack streak rewards.</div>
+        <div class="tutorialStep"><strong>1. Select</strong><br/>Use <kbd>WASD</kbd> or arrow keys and press <kbd>Enter</kbd>.</div>
+        <div class="tutorialStep"><strong>2. Capture</strong><br/>Press <kbd>E</kbd> on nearby neutral/enemy land.</div>
+        <div class="tutorialStep"><strong>3. Build</strong><br/>Use <kbd>1</kbd> House, <kbd>2</kbd> Market, <kbd>3</kbd> Barracks, <kbd>4</kbd> Wall.</div>
+        <div class="tutorialStep"><strong>4. Train + Move</strong><br/><kbd>Q</kbd> to train. <kbd>Tab</kbd> unit cycle, <kbd>Enter</kbd> to set unit target.</div>
       </div>
-      <div class="muted">Arcade tip: fast actions are stronger than perfect actions.</div>
+      <div class="muted">Tip: build a stable economy first, then pressure with soldiers.</div>
+      <div id="tutorialChecklist" class="muted" style="margin-top:8px;"></div>
       <div class="tutorialButtons">
         <button id="closeTutorialBtn">Start Playing</button>
         <button id="dontShowTutorialBtn">Start + Hide Next Time</button>
@@ -270,7 +376,8 @@
   <div id="gameWrap">
     <canvas id="gameCanvas" width="900" height="600"></canvas>
     <div id="ui">
-      <h1>Colony Command</h1>
+      <h1>Canvas</h1>
+      <div id="uiVersion" class="uiSubhead">Version</div>
 
       <div class="card">
         <h2>Match Setup</h2>
@@ -295,54 +402,51 @@
       </div>
 
       <div class="card">
-        <h2>Momentum</h2>
-        <div id="momentumInfo" class="muted">Build a streak to earn bonus XP and rewards.</div>
+        <h2>Flow</h2>
+        <div id="momentumInfo" class="muted">Capture tiles, build economy, and train soldiers.</div>
       </div>
 
       <div class="card">
         <h2>Selected Tile</h2>
-        <div id="selectedInfo" class="muted">Click a tile.</div>
+        <div id="selectedInfo" class="muted">Move cursor with keys and press Enter.</div>
       </div>
 
       <div class="card">
         <h2>Actions</h2>
-        <button id="expandBtn">Expand / Capture Selected Tile (12 Materials, 4 Gold)</button>
+        <button id="expandBtn">Capture Selected Tile (6 Materials, 2 Gold)</button>
         <div class="row">
           <button data-build="house">Build House</button>
           <button data-build="market">Build Market</button>
         </div>
         <div class="row">
-          <button data-build="wall">Build Wall</button>
           <button data-build="barracks">Build Barracks</button>
+          <button data-build="wall">Build Wall</button>
         </div>
-        <button data-build="archery">Build Archery Range</button>
       </div>
 
       <div class="card">
         <h2>Units</h2>
         <button id="trainSoldier">Train Soldier (Barracks)</button>
-        <button id="trainArcher">Train Archer (Archery Range)</button>
+        <button id="trainArcher" hidden>Train Archer (disabled)</button>
         <div class="muted" style="margin-top:6px; font-size:12px;">
-          Click your unit to select it, then click a destination tile to move/attack.
+          Use <kbd>Tab</kbd> to select units, move cursor with keys, and press <kbd>Enter</kbd> to command.
         </div>
       </div>
 
       <div class="card tutorial">
-        <h2>Quick Tutorial</h2>
-        <p>Goal: keep expanding and pressure enemies before they scale.</p>
+        <h2>Keyboard Commands</h2>
+        <p>All gameplay actions are available with keyboard input.</p>
         <ul>
-          <li><kbd>Mouse Left</kbd> select tile/unit</li>
-          <li><kbd>Mouse Right</kbd> move selected unit</li>
+          <li><kbd>WASD</kbd> / <kbd>Arrows</kbd> move cursor</li>
+          <li><kbd>Enter</kbd> select tile / issue selected unit move target</li>
           <li><kbd>E</kbd> capture selected tile</li>
-          <li><kbd>1</kbd> House, <kbd>2</kbd> Market, <kbd>Q</kbd> Soldier</li>
-          <li><kbd>Tab</kbd> cycle your units quickly</li>
-          <li><kbd>1</kbd> House, <kbd>2</kbd> Market, <kbd>3</kbd> Wall, <kbd>4</kbd> Barracks, <kbd>5</kbd> Archery</li>
-          <li><kbd>Q</kbd> Soldier, <kbd>R</kbd> Archer, <kbd>H</kbd> help</li>
+          <li><kbd>1</kbd> House, <kbd>2</kbd> Market, <kbd>3</kbd> Barracks, <kbd>4</kbd> Wall</li>
+          <li><kbd>Q</kbd> train soldier, <kbd>Tab</kbd> cycle units, <kbd>H</kbd> help</li>
         </ul>
       </div>
 
       <div class="card">
-        <h2>Quests</h2>
+        <h2>Status</h2>
         <div id="questList" class="muted"></div>
       </div>
 
@@ -364,6 +468,7 @@
     const TILE = 30;
     const PLAYER_ID = 0;
     const PLAYER_TWO_ID = 1;
+    const GAME_VERSION = "Kingdom Update v1.2";
 
     const GAME_MODE = {
       SINGLE: "single",
@@ -371,9 +476,9 @@
     };
 
     const AI_DIFFICULTIES = {
-      easy: { aiTickInterval: 2.8, profileScale: 0.78 },
-      normal: { aiTickInterval: 2.1, profileScale: 1 },
-      hard: { aiTickInterval: 1.6, profileScale: 1.22 }
+      easy: { aiTickInterval: 4.2, profileScale: 0.52 },
+      normal: { aiTickInterval: 3.2, profileScale: 0.7 },
+      hard: { aiTickInterval: 2.4, profileScale: 0.9 }
     };
 
     const TERRAIN = {
@@ -392,25 +497,25 @@
       house: {
         label: "House",
         short: "H",
-        cost: { materials: 24, gold: 8 },
+        cost: { materials: 14, gold: 4 },
         effects: { housing: 9, food: 1 }
       },
       market: {
         label: "Market",
         short: "M",
-        cost: { materials: 30, gold: 10 },
-        effects: { food: 1.8, gold: 5, materials: 1.3 }
+        cost: { materials: 18, gold: 5 },
+        effects: { food: 1.8, gold: 5.2, materials: 1.6 }
       },
       wall: {
         label: "Wall",
         short: "W",
-        cost: { materials: 24, gold: 4 },
+        cost: { materials: 10, gold: 2 },
         effects: { defense: 2 }
       },
       barracks: {
         label: "Barracks",
         short: "B",
-        cost: { materials: 38, gold: 12 },
+        cost: { materials: 22, gold: 6 },
         effects: {}
       },
       archery: {
@@ -428,7 +533,7 @@
         atk: 5,
         range: 1,
         moveDelay: 0.42,
-        cost: { food: 4, materials: 8, gold: 11 },
+        cost: { food: 2, materials: 5, gold: 4 },
         barracks: true
       },
       archer: {
@@ -461,9 +566,16 @@
       difficultySelect: document.getElementById("difficultySelect"),
       endTurnBtn: document.getElementById("endTurnBtn"),
       matchStatus: document.getElementById("matchStatus"),
+      homeOverlay: document.getElementById("homeOverlay"),
+      homeModeSelect: document.getElementById("homeModeSelect"),
+      homeDifficultySelect: document.getElementById("homeDifficultySelect"),
+      playBtn: document.getElementById("playBtn"),
+      versionBadge: document.getElementById("versionBadge"),
+      uiVersion: document.getElementById("uiVersion"),
       tutorialOverlay: document.getElementById("tutorialOverlay"),
       closeTutorialBtn: document.getElementById("closeTutorialBtn"),
-      dontShowTutorialBtn: document.getElementById("dontShowTutorialBtn")
+      dontShowTutorialBtn: document.getElementById("dontShowTutorialBtn"),
+      tutorialChecklist: document.getElementById("tutorialChecklist")
     };
 
     let nextUnitId = 1;
@@ -474,6 +586,7 @@
       selectedTile: null,
       selectedUnitId: null,
       hoverTile: null,
+      homeOpen: true,
       cursorTile: { x: 4, y: Math.floor(GRID_H / 2) },
       tutorialOpen: false,
       lastFrame: performance.now(),
@@ -498,7 +611,14 @@
       aiTickInterval: AI_DIFFICULTIES.normal.aiTickInterval,
       factions: [],
       aiProfiles: [],
-      quests: createQuests()
+      quests: [],
+      tutorialProgress: {
+        selected: false,
+        captured: false,
+        built: false,
+        trained: false,
+        moved: false
+      }
     };
 
     function isTwoPlayerMode() {
@@ -544,11 +664,11 @@
       if (!isTwoPlayerMode()) {
         const scale = getAIConfig().profileScale;
         state.aiProfiles[1] = scaleProfile(
-          { aggression: 0.72, defenseBias: 0.5, economyBias: 0.62, focusPlayer: 0.66 },
+          { aggression: 0.42, defenseBias: 0.56, economyBias: 0.64, focusPlayer: 0.5 },
           scale
         );
         state.aiProfiles[2] = scaleProfile(
-          { aggression: 0.8, defenseBias: 0.44, economyBias: 0.56, focusPlayer: 0.8 },
+          { aggression: 0.5, defenseBias: 0.52, economyBias: 0.6, focusPlayer: 0.56 },
           scale
         );
       }
@@ -561,13 +681,13 @@
         name,
         isPlayer,
         resources: {
-          population: isPlayer ? 20 : 13,
-          food: isPlayer ? 175 : 95,
-          materials: isPlayer ? 280 : 140,
-          gold: isPlayer ? 190 : 90,
+          population: isPlayer ? 36 : 13,
+          food: isPlayer ? 300 : 85,
+          materials: isPlayer ? 520 : 125,
+          gold: isPlayer ? 360 : 80,
           military: 0,
           morale: 100,
-          housing: isPlayer ? 30 : 18
+          housing: isPlayer ? 62 : 18
         },
         stats: {
           tilesCaptured: 0,
@@ -579,49 +699,7 @@
     }
 
     function createQuests() {
-      return [
-        {
-          id: "capture5",
-          title: "Capture 5 tiles",
-          target: 5,
-          reward: () => {
-            const p = getFaction(PLAYER_ID);
-            p.resources.materials += 70;
-            p.resources.gold += 50;
-            logMsg("Quest reward: +70 Materials, +50 Gold", "good");
-          },
-          done: false,
-          progress: () => getFaction(PLAYER_ID).stats.tilesCaptured
-        },
-        {
-          id: "market3",
-          title: "Build 3 markets",
-          target: 3,
-          reward: () => {
-            const p = getFaction(PLAYER_ID);
-            p.resources.gold += 60;
-            p.resources.materials += 40;
-            p.resources.food += 25;
-            logMsg("Quest reward: +60 Gold, +40 Materials, +25 Food", "good");
-          },
-          done: false,
-          progress: () => getFaction(PLAYER_ID).stats.marketsBuilt
-        },
-        {
-          id: "soldier5",
-          title: "Train 5 soldiers",
-          target: 5,
-          reward: () => {
-            const p = getFaction(PLAYER_ID);
-            p.resources.materials += 50;
-            p.resources.gold += 60;
-            grantTerritoryBonus(PLAYER_ID, 2);
-            logMsg("Quest reward: +50 Materials, +60 Gold, +2 bonus tiles", "good");
-          },
-          done: false,
-          progress: () => getFaction(PLAYER_ID).stats.soldiersTrained
-        }
-      ];
+      return [];
     }
 
     function getFaction(id) {
@@ -644,6 +722,68 @@
       };
     }
 
+    function seedKingdom(cx, cy, owner) {
+      for (let dy = -4; dy <= 4; dy++) {
+        for (let dx = -4; dx <= 4; dx++) {
+          const t = getTile(cx + dx, cy + dy);
+          if (!t) continue;
+          t.terrain = TERRAIN.LAND;
+          if (Math.abs(dx) <= 3 && Math.abs(dy) <= 3) {
+            t.owner = owner;
+          }
+        }
+      }
+
+      const wallRing = [];
+      for (let dy = -4; dy <= 4; dy++) {
+        for (let dx = -4; dx <= 4; dx++) {
+          if (Math.abs(dx) !== 4 && Math.abs(dy) !== 4) continue;
+          wallRing.push({ x: cx + dx, y: cy + dy });
+        }
+      }
+      for (const p of wallRing) {
+        const t = getTile(p.x, p.y);
+        if (!t) continue;
+        t.owner = owner;
+        placeBuilding(p.x, p.y, "wall", owner, true);
+      }
+
+      const buildPlan = [
+        { dx: 0, dy: 0, type: "house" },
+        { dx: -2, dy: 1, type: "house" },
+        { dx: 2, dy: 1, type: "house" },
+        { dx: -1, dy: -1, type: "market" },
+        { dx: 1, dy: -1, type: "market" },
+        { dx: -2, dy: -2, type: "barracks" },
+        { dx: 0, dy: 2, type: "barracks" },
+        { dx: 2, dy: -2, type: "barracks" }
+      ];
+
+      for (const b of buildPlan) {
+        const x = cx + b.dx;
+        const y = cy + b.dy;
+        const t = getTile(x, y);
+        if (!t) continue;
+        t.owner = owner;
+        t.terrain = TERRAIN.LAND;
+        placeBuilding(x, y, b.type, owner, true);
+      }
+
+      const unitSpots = [
+        { x: cx - 1, y: cy },
+        { x: cx + 1, y: cy },
+        { x: cx, y: cy + 1 },
+        { x: cx, y: cy -2 }
+      ];
+      const isHumanStart = isTwoPlayerMode()
+        ? owner === PLAYER_ID || owner === PLAYER_TWO_ID
+        : owner === PLAYER_ID;
+      const spawnCount = isHumanStart ? unitSpots.length : 2;
+      for (const p of unitSpots.slice(0, spawnCount)) {
+        spawnUnit(owner, "soldier", p.x, p.y, true);
+      }
+    }
+
     function initMap() {
       state.map = [];
       for (let y = 0; y < GRID_H; y++) {
@@ -656,56 +796,19 @@
         state.map.push(row);
       }
 
-      carveColony(5, Math.floor(GRID_H / 2), PLAYER_ID, 2);
-      if (isTwoPlayerMode()) {
-        carveColony(GRID_W - 6, Math.floor(GRID_H / 2), PLAYER_TWO_ID, 2);
-      } else {
-        carveColony(GRID_W - 6, 5, 1, 2);
-        carveColony(GRID_W - 7, GRID_H - 6, 2, 2);
-      }
+      const centers = isTwoPlayerMode()
+        ? [
+            { id: PLAYER_ID, x: 6, y: Math.floor(GRID_H / 2) },
+            { id: PLAYER_TWO_ID, x: GRID_W - 7, y: Math.floor(GRID_H / 2) }
+          ]
+        : [
+            { id: PLAYER_ID, x: 6, y: Math.floor(GRID_H / 2) },
+            { id: 1, x: GRID_W - 7, y: 5 },
+            { id: 2, x: GRID_W - 7, y: GRID_H - 5 }
+          ];
 
-      const pc = { x: 5, y: Math.floor(GRID_H / 2) };
-      placeBuilding(pc.x, pc.y, "house", PLAYER_ID, true);
-      placeBuilding(pc.x + 1, pc.y, "barracks", PLAYER_ID, true);
-      placeBuilding(pc.x, pc.y + 1, "market", PLAYER_ID, true);
-      placeBuilding(pc.x - 1, pc.y, "market", PLAYER_ID, true);
-      placeBuilding(pc.x - 2, pc.y, "wall", PLAYER_ID, true);
-
-      if (isTwoPlayerMode()) {
-        const p2 = { x: GRID_W - 6, y: Math.floor(GRID_H / 2) };
-        placeBuilding(p2.x, p2.y, "house", PLAYER_TWO_ID, true);
-        placeBuilding(p2.x - 1, p2.y, "barracks", PLAYER_TWO_ID, true);
-        placeBuilding(p2.x, p2.y - 1, "market", PLAYER_TWO_ID, true);
-        placeBuilding(p2.x + 1, p2.y, "wall", PLAYER_TWO_ID, true);
-      } else {
-        const e1 = { x: GRID_W - 6, y: 5 };
-        const e2 = { x: GRID_W - 7, y: GRID_H - 6 };
-        placeBuilding(e1.x, e1.y, "house", 1, true);
-        placeBuilding(e1.x - 1, e1.y, "barracks", 1, true);
-        placeBuilding(e1.x, e1.y + 1, "market", 1, true);
-        placeBuilding(e1.x + 1, e1.y, "wall", 1, true);
-
-        placeBuilding(e2.x, e2.y, "house", 2, true);
-        placeBuilding(e2.x - 1, e2.y, "archery", 2, true);
-        placeBuilding(e2.x, e2.y - 1, "market", 2, true);
-        placeBuilding(e2.x + 1, e2.y, "wall", 2, true);
-      }
-
-      spawnUnit(PLAYER_ID, "soldier", pc.x + 1, pc.y + 1, true);
-      spawnUnit(PLAYER_ID, "archer", pc.x, pc.y - 1, true);
-      spawnUnit(PLAYER_ID, "soldier", pc.x + 2, pc.y, true);
-      if (isTwoPlayerMode()) {
-        const p2 = { x: GRID_W - 6, y: Math.floor(GRID_H / 2) };
-        spawnUnit(PLAYER_TWO_ID, "soldier", p2.x - 1, p2.y + 1, true);
-        spawnUnit(PLAYER_TWO_ID, "archer", p2.x, p2.y - 2, true);
-        spawnUnit(PLAYER_TWO_ID, "soldier", p2.x - 2, p2.y, true);
-      } else {
-        const e1 = { x: GRID_W - 6, y: 5 };
-        const e2 = { x: GRID_W - 7, y: GRID_H - 6 };
-        spawnUnit(1, "soldier", e1.x - 1, e1.y + 1, true);
-        spawnUnit(1, "archer", e1.x, e1.y - 1, true);
-        spawnUnit(2, "archer", e2.x - 1, e2.y - 1, true);
-        spawnUnit(2, "soldier", e2.x, e2.y + 1, true);
+      for (const c of centers) {
+        seedKingdom(c.x, c.y, c.id);
       }
     }
 
@@ -802,22 +905,12 @@
     }
 
     function streakBonus(mult = 1) {
-      state.streak += 1;
-      state.bestStreak = Math.max(state.bestStreak, state.streak);
-      state.streakTimer = 6;
-
-      const xpGain = Math.round((9 + state.streak * 1.5) * mult);
-      state.playerXP += xpGain;
-      levelUpIfNeeded();
-
-      if (state.streak > 1 && state.streak % 4 === 0) {
-        const p = getFaction(PLAYER_ID);
-        const mats = 14 + state.playerLevel * 2;
-        const gold = 10 + state.playerLevel;
-        p.resources.materials += mats;
-        p.resources.gold += gold;
-        logMsg(`Streak ${state.streak}! Bonus +${mats} Materials +${gold} Gold`, "accent");
-      }
+      const p = getFaction(PLAYER_ID);
+      if (!p) return;
+      const mats = Math.max(1, Math.round(2 * mult));
+      const gold = Math.max(1, Math.round(1.5 * mult));
+      p.resources.materials += mats;
+      p.resources.gold += gold;
     }
 
     function levelXPGoal(level) {
@@ -850,6 +943,34 @@
     function setTutorialOpen(open) {
       state.tutorialOpen = open;
       ui.tutorialOverlay.hidden = !open;
+      updateTutorialChecklist();
+    }
+
+    function markTutorialStep(step) {
+      if (!state.tutorialProgress[step]) {
+        state.tutorialProgress[step] = true;
+        updateTutorialChecklist();
+      }
+    }
+
+    function updateTutorialChecklist() {
+      if (!ui.tutorialChecklist) return;
+      const p = state.tutorialProgress;
+      const rows = [
+        `${p.selected ? "✅" : "⬜"} Select a tile with keyboard`,
+        `${p.captured ? "✅" : "⬜"} Capture once with E`,
+        `${p.built ? "✅" : "⬜"} Build once (1/2/3/4)`,
+        `${p.trained ? "✅" : "⬜"} Train one soldier (Q)`,
+        `${p.moved ? "✅" : "⬜"} Move one soldier target with Enter`
+      ];
+      ui.tutorialChecklist.innerHTML = `<strong>Interactive Training:</strong><br/>${rows.join("<br/>")}`;
+    }
+
+    function consumeTurn(actionLabel) {
+      if (!isTwoPlayerMode() || state.gameOver) return;
+      const current = getFaction(state.activePlayerId);
+      endTurn();
+      logMsg(`${current.name} used turn: ${actionLabel}`, "accent");
     }
 
     // =====================
@@ -1281,9 +1402,9 @@
 
       if (!options.length) return;
       const profile = state.aiProfiles[faction.id];
-      if (Math.random() > 0.62 + profile.aggression * 0.28) return;
+      if (Math.random() > 0.84 + profile.aggression * 0.12) return;
 
-      const cost = { materials: 14, gold: 5 };
+      const cost = { materials: 8, gold: 3 };
       if (!hasResources(faction, cost)) return;
 
       options.sort((a, b) => {
@@ -1297,7 +1418,7 @@
     }
 
     function aiBuild(faction) {
-      if (Math.random() > 0.76) return;
+      if (Math.random() > 0.9) return;
       const profile = state.aiProfiles[faction.id];
 
       const ownedEmpty = [];
@@ -1310,44 +1431,31 @@
       if (!ownedEmpty.length) return;
 
       const buildings = findBuildings(faction.id);
-      const units = state.units.filter(u => u.owner === faction.id);
-      const soldiers = units.filter(u => u.type === "soldier").length;
-      const archers = units.filter(u => u.type === "archer").length;
       const lowHousing = faction.resources.population > faction.resources.housing - 3;
       const lowFood = faction.resources.food < faction.resources.population * 1.5;
-      const needsBarracks = buildings.barracks.length === 0 || soldiers < 2;
-      const needsArchery = buildings.archery.length === 0 || archers < 2;
+      const needsBarracks = buildings.barracks.length === 0;
 
       const choices = [];
       if (lowHousing) choices.push("house", "house");
       if (lowFood || Math.random() < profile.economyBias) choices.push("market", "market");
       if (needsBarracks) choices.push("barracks", "barracks");
-      if (needsArchery) choices.push("archery", "archery");
-      if (Math.random() < profile.defenseBias) choices.push("wall", "wall", "wall");
-      choices.push("house", "market", "wall", "barracks", "archery");
+      choices.push("house", "market", "barracks");
 
       const pick = randChoice(choices);
-      const defensiveSpots = frontierTiles(faction.id, ownedEmpty);
-      const tile = pick === "wall" && defensiveSpots.length ? randChoice(defensiveSpots) : randChoice(ownedEmpty);
+      const tile = randChoice(ownedEmpty);
       placeBuilding(tile.x, tile.y, pick, faction.id, false);
     }
 
     function aiTrain(faction) {
       const profile = state.aiProfiles[faction.id];
-      if (Math.random() > 0.82 + profile.economyBias * 0.1) return;
+      if (Math.random() > 0.92 + profile.economyBias * 0.05) return;
 
       const buildings = findBuildings(faction.id);
-      const myUnits = state.units.filter(u => u.owner === faction.id);
-      const soldiers = myUnits.filter(u => u.type === "soldier").length;
-      const archers = myUnits.filter(u => u.type === "archer").length;
+      const myUnits = state.units.filter(u => u.owner === faction.id && u.type === "soldier").length;
 
-      if (buildings.barracks.length && (soldiers <= archers || Math.random() < 0.55)) {
+      if (buildings.barracks.length && (myUnits < 9 || Math.random() < 0.7)) {
         const b = randChoice(buildings.barracks);
         spawnUnit(faction.id, "soldier", b.x, b.y, false);
-      }
-      if (buildings.archery.length && (archers <= soldiers + 1 || Math.random() < 0.42)) {
-        const a = randChoice(buildings.archery);
-        spawnUnit(faction.id, "archer", a.x, a.y, false);
       }
     }
 
@@ -1433,8 +1541,22 @@
     canvas.addEventListener("mousemove", onCanvasMove);
     ui.closeTutorialBtn.addEventListener("click", () => setTutorialOpen(false));
     ui.dontShowTutorialBtn.addEventListener("click", () => {
-      localStorage.setItem("colonyCommand.hideTutorial", "1");
+      localStorage.setItem("canvas.hideTutorial", "1");
       setTutorialOpen(false);
+    });
+    function startGameFromHome() {
+      ui.modeSelect.value = ui.homeModeSelect.value;
+      ui.difficultySelect.value = ui.homeDifficultySelect.value;
+      state.homeOpen = false;
+      ui.homeOverlay.hidden = true;
+      resetGame();
+      const hideTutorial = localStorage.getItem("canvas.hideTutorial") === "1";
+      setTutorialOpen(!hideTutorial);
+      updateUI();
+    }
+
+    ui.playBtn.addEventListener("click", () => {
+      startGameFromHome();
     });
 
     function tileFromEvent(e) {
@@ -1453,21 +1575,25 @@
       if (!tile) return false;
       state.selectedTile = { x, y };
       state.cursorTile = { x, y };
+      markTutorialStep("selected");
       return true;
     }
 
     function commandSelectedUnitTo(x, y) {
       const tile = getTile(x, y);
-      if (!tile || !state.selectedUnitId) return;
+      if (!tile || !state.selectedUnitId) return false;
       const u = getUnitById(state.selectedUnitId);
       const activePlayer = getControllablePlayerId();
-      if (!u || u.owner !== activePlayer) return;
+      if (!u || u.owner !== activePlayer) return false;
       u.target = { x, y };
       logMsg(`Unit #${u.id} moving to (${x}, ${y})`);
+      markTutorialStep("moved");
+      consumeTurn("Move Unit");
+      return true;
     }
 
     function onCanvasClick(e) {
-      if (state.gameOver || state.tutorialOpen) return;
+      if (state.homeOpen || state.gameOver || state.tutorialOpen) return;
 
       const hit = tileFromEvent(e);
       if (!hit) return;
@@ -1489,7 +1615,7 @@
 
     function onCanvasRightClick(e) {
       e.preventDefault();
-      if (state.gameOver || state.tutorialOpen) return;
+      if (state.homeOpen || state.gameOver || state.tutorialOpen) return;
       const hit = tileFromEvent(e);
       if (!hit) return;
       const { x, y } = hit;
@@ -1509,7 +1635,7 @@
       const p = getFaction(activePlayer);
       const x = state.selectedTile.x;
       const y = state.selectedTile.y;
-      const cost = { materials: 12, gold: 4 };
+      const cost = { materials: 6, gold: 2 };
 
       if (!canClaim(activePlayer, x, y)) {
         logMsg("Cannot capture: needs nearby owned territory.", "bad");
@@ -1523,9 +1649,11 @@
       spendResources(p, cost);
       if (captureTile(activePlayer, x, y, false)) {
         logMsg(`Captured tile (${x}, ${y})`, "good");
+        markTutorialStep("captured");
       } else {
         logMsg("Capture attempt damaged defenses.", "accent");
       }
+      consumeTurn("Capture");
       return true;
     }
 
@@ -1552,9 +1680,12 @@
       const ok = placeBuilding(x, y, type, activePlayer, false);
       if (ok) {
         logMsg(`Built ${BUILDINGS[type].label} at (${x}, ${y})`, "good");
+        markTutorialStep("built");
+        consumeTurn(`Build ${BUILDINGS[type].short}`);
       } else {
         logMsg(`Cannot build ${BUILDINGS[type].label} here.`, "bad");
       }
+      return ok;
     }
 
     document.querySelectorAll("button[data-build]").forEach(btn => {
@@ -1569,7 +1700,7 @@
     });
 
     ui.trainArcher.addEventListener("click", () => {
-      trainPlayerUnit("archer");
+      logMsg("Archer training is disabled in this simplified mode.", "accent");
     });
 
     function trainPlayerUnit(type) {
@@ -1595,6 +1726,8 @@
       if (ok) {
         logMsg(`Trained ${UNIT_TYPES[type].label}`, "good");
         streakBonus(0.75);
+        markTutorialStep("trained");
+        consumeTurn("Train Soldier");
         const c = toCanvasCenter(tile.x, tile.y);
         addParticles(c.px, c.py, "#b2ddff", 7);
         addFloatText(c.px, c.py - 8, `+${UNIT_TYPES[type].label}`, "#d5ecff");
@@ -1602,6 +1735,7 @@
         logMsg(`Cannot train ${UNIT_TYPES[type].label} (cost/space).`, "bad");
       }
       updateUI();
+      return ok;
     }
 
     function cyclePlayerUnits() {
@@ -1622,6 +1756,13 @@
 
     document.addEventListener("keydown", (e) => {
       const key = e.key.toLowerCase();
+      if (state.homeOpen) {
+        if (key === "enter" || key === " ") {
+          e.preventDefault();
+          startGameFromHome();
+        }
+        return;
+      }
       if (key === "h") {
         e.preventDefault();
         setTutorialOpen(!state.tutorialOpen);
@@ -1681,23 +1822,11 @@
         trainPlayerUnit("soldier");
         return;
       }
-      if (key === "r") {
-        e.preventDefault();
-        trainPlayerUnit("archer");
-        return;
-      }
-      if (key === "t" && isTwoPlayerMode()) {
-        e.preventDefault();
-        endTurn();
-        return;
-      }
-
       const buildByKey = {
         "1": "house",
         "2": "market",
-        "3": "wall",
-        "4": "barracks",
-        "5": "archery"
+        "3": "barracks",
+        "4": "wall"
       };
       if (buildByKey[key]) {
         e.preventDefault();
@@ -1764,31 +1893,22 @@
     }
 
     function drawTopHud() {
-      const streakPulse = state.streak > 1 ? (Math.sin(state.animTime * 7) + 1) * 0.5 : 0;
-      const barW = 170;
-      const barH = 8;
-      const xpGoal = levelXPGoal(state.playerLevel);
-      const activeName = getFaction(getControllablePlayerId()) ? getFaction(getControllablePlayerId()).name : "Player";
+      const activeId = getControllablePlayerId();
+      const activeFaction = getFaction(activeId);
+      const activeName = activeFaction ? activeFaction.name : "Player";
+      const unitCount = state.units.filter(u => u.owner === activeId).length;
+      const territory = countTerritory(activeId);
 
-      ctx.fillStyle = "rgba(7, 12, 17, 0.6)";
-      ctx.fillRect(8, 8, 230, 62);
-      ctx.strokeStyle = "rgba(164, 210, 230, 0.6)";
-      ctx.strokeRect(8, 8, 230, 62);
+      ctx.fillStyle = "rgba(5, 10, 15, 0.62)";
+      ctx.fillRect(8, 8, 250, 56);
+      ctx.strokeStyle = "rgba(164, 210, 230, 0.58)";
+      ctx.strokeRect(8, 8, 250, 56);
 
       ctx.fillStyle = "#e8f7ff";
       ctx.font = "12px Verdana";
       ctx.textAlign = "left";
-      ctx.fillText(activeName, 16, 14);
-      ctx.fillText(`Lv ${state.playerLevel}`, 16, 26);
-      ctx.fillText(`Streak: x${state.streak}`, 16, 42);
-      ctx.fillText(`Best: x${state.bestStreak}`, 16, 58);
-
-      ctx.fillStyle = "rgba(20, 30, 42, 0.95)";
-      ctx.fillRect(58, 18, barW, barH);
-      ctx.fillStyle = `rgba(114, 226, 154, ${0.8 + streakPulse * 0.2})`;
-      ctx.fillRect(58, 18, barW * clamp(state.playerXP / xpGoal, 0, 1), barH);
-      ctx.strokeStyle = "rgba(170, 220, 190, 0.8)";
-      ctx.strokeRect(58, 18, barW, barH);
+      ctx.fillText(activeName, 16, 26);
+      ctx.fillText(`Tiles: ${territory}  Units: ${unitCount}`, 16, 44);
     }
 
     // =====================
@@ -1815,6 +1935,62 @@
       ctx.fillRect(px + 1, py + TILE - 3, TILE - 2, 2);
     }
 
+    function drawBuildingSprite(tile, px, py) {
+      const b = tile.building;
+      if (!b) return;
+
+      if (b === "wall") {
+        ctx.fillStyle = "#728799";
+        ctx.fillRect(px + 2, py + 6, TILE - 4, TILE - 8);
+        ctx.fillStyle = "#5f7383";
+        for (let i = 0; i < 4; i++) {
+          ctx.fillRect(px + 4 + i * 6, py + 4, 4, 4);
+        }
+        ctx.fillStyle = "#465866";
+        ctx.fillRect(px + 2, py + TILE - 5, TILE - 4, 3);
+        return;
+      }
+
+      if (b === "house") {
+        ctx.fillStyle = "#d7e2ec";
+        ctx.fillRect(px + 7, py + 11, 16, 13);
+        ctx.fillStyle = "#9f5f4b";
+        ctx.beginPath();
+        ctx.moveTo(px + 5, py + 12);
+        ctx.lineTo(px + 15, py + 5);
+        ctx.lineTo(px + 25, py + 12);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = "#5b7388";
+        ctx.fillRect(px + 13, py + 14, 4, 10);
+        return;
+      }
+
+      if (b === "market") {
+        ctx.fillStyle = "#f4d6a1";
+        ctx.fillRect(px + 6, py + 10, 18, 14);
+        ctx.fillStyle = "#c25e5e";
+        for (let i = 0; i < 3; i++) {
+          ctx.fillRect(px + 6 + i * 6, py + 7, 4, 5);
+        }
+        ctx.fillStyle = "#f6f1e4";
+        ctx.fillRect(px + 6, py + 12, 18, 3);
+        ctx.fillStyle = "#6b8f63";
+        ctx.fillRect(px + 9, py + 16, 12, 8);
+        return;
+      }
+
+      if (b === "barracks") {
+        ctx.fillStyle = "#8ba0b2";
+        ctx.fillRect(px + 6, py + 9, 18, 15);
+        ctx.fillStyle = "#6f8392";
+        ctx.fillRect(px + 6, py + 7, 18, 4);
+        ctx.fillStyle = "#485765";
+        ctx.fillRect(px + 9, py + 13, 4, 11);
+        ctx.fillRect(px + 17, py + 13, 4, 11);
+      }
+    }
+
     function drawMap() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -1831,16 +2007,7 @@
             ctx.fillRect(px, py, TILE, TILE);
           }
 
-          if (t.building) {
-            ctx.fillStyle = "rgba(8, 12, 16, 0.45)";
-            ctx.fillRect(px + 7, py + 8, TILE - 11, TILE - 11);
-            ctx.fillStyle = "#1f1f1f";
-            ctx.fillRect(px + 6, py + 6, TILE - 12, TILE - 12);
-            ctx.fillStyle = "#f4f4f4";
-            ctx.font = "10px Verdana";
-            ctx.textAlign = "center";
-            ctx.fillText(BUILDINGS[t.building].short, px + TILE / 2, py + TILE / 2 + 3);
-          }
+          drawBuildingSprite(t, px, py);
 
           ctx.strokeStyle = "rgba(12, 22, 28, 0.32)";
           ctx.strokeRect(px, py, TILE, TILE);
@@ -1852,23 +2019,59 @@
       for (const u of state.units) {
         const px = u.x * TILE + TILE / 2;
         const py = u.y * TILE + TILE / 2;
+        const palette = u.owner === PLAYER_ID
+          ? { body: "#9ee7bf", trim: "#1b4f39" }
+          : (u.owner === 1
+            ? { body: "#f0a29b", trim: "#5c2723" }
+            : { body: "#f4d596", trim: "#5b4720" });
 
+        ctx.fillStyle = "rgba(0, 0, 0, 0.28)";
         ctx.beginPath();
-        ctx.arc(px + 1, py + 2, 8, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(0, 0, 0, 0.25)";
+        ctx.ellipse(px + 0.6, py + 8.2, 7.8, 3.6, 0, 0, Math.PI * 2);
         ctx.fill();
 
+        ctx.fillStyle = palette.body;
         ctx.beginPath();
-        ctx.arc(px, py, 8, 0, Math.PI * 2);
-        ctx.fillStyle = u.owner === PLAYER_ID ? "#d6ffe6" : (u.owner === 1 ? "#ffd0cc" : "#ffe7c1");
+        ctx.arc(px, py - 1.5, 6.8, 0, Math.PI * 2);
         ctx.fill();
-        ctx.strokeStyle = "#1f2f3a";
+        ctx.strokeStyle = "#102028";
+        ctx.lineWidth = 1.2;
         ctx.stroke();
 
-        ctx.fillStyle = "#152430";
-        ctx.font = "10px Verdana";
-        ctx.textAlign = "center";
-        ctx.fillText(u.type === "soldier" ? "S" : "A", px, py + 3);
+        // Helmet + crest
+        ctx.fillStyle = "#dce8f2";
+        ctx.fillRect(px - 4.5, py - 8.6, 9, 3.5);
+        ctx.fillStyle = palette.trim;
+        ctx.fillRect(px - 1, py - 10.2, 2, 2.2);
+
+        // Torso
+        ctx.fillStyle = "#1a2d3b";
+        ctx.fillRect(px - 3.6, py - 0.5, 7.2, 6.5);
+
+        // Shield
+        ctx.fillStyle = "#a6c3d5";
+        ctx.beginPath();
+        ctx.moveTo(px - 7.5, py - 1);
+        ctx.lineTo(px - 3.8, py - 3);
+        ctx.lineTo(px - 3.8, py + 3.8);
+        ctx.lineTo(px - 7.2, py + 2.2);
+        ctx.closePath();
+        ctx.fill();
+
+        // Spear
+        ctx.strokeStyle = "#f3e2bf";
+        ctx.lineWidth = 1.1;
+        ctx.beginPath();
+        ctx.moveTo(px + 3.5, py - 2);
+        ctx.lineTo(px + 8.4, py - 6.4);
+        ctx.stroke();
+        ctx.fillStyle = "#f4f4f4";
+        ctx.beginPath();
+        ctx.moveTo(px + 8.4, py - 6.4);
+        ctx.lineTo(px + 10.4, py - 5.9);
+        ctx.lineTo(px + 8.9, py - 4.6);
+        ctx.closePath();
+        ctx.fill();
 
         // HP bar
         const hpRatio = u.hp / u.maxHp;
@@ -1970,34 +2173,26 @@
 
       ui.resourceStats.innerHTML = `
         <div>Faction:</div><div>${activeName}</div>
-        <div>Population:</div><div>${p.resources.population.toFixed(1)} / ${p.resources.housing.toFixed(0)}</div>
         <div>Food:</div><div>${p.resources.food.toFixed(1)}</div>
         <div>Materials:</div><div>${p.resources.materials.toFixed(1)}</div>
         <div>Gold:</div><div>${p.resources.gold.toFixed(1)}</div>
-        <div>Military:</div><div>${p.resources.military}</div>
-        <div>Morale:</div><div>${p.resources.morale.toFixed(0)}</div>
         <div>Territory:</div><div>${territory} tiles</div>
         <div>Units:</div><div>${units}</div>
       `;
 
-      const xpGoal = levelXPGoal(state.playerLevel);
-      const streakText = state.streak > 0
-        ? `Streak x${state.streak} (${state.streakTimer.toFixed(1)}s left)`
-        : "No active streak. Keep acting to chain rewards.";
       if (isTwoPlayerMode()) {
         const nextName = activePlayer === PLAYER_ID ? "Player 2" : "Player 1";
         ui.momentumInfo.innerHTML = `
           Active Turn: <span class="good">${activeName}</span><br/>
-          Press <kbd>T</kbd> or use End Turn.<br/>
+          Every action auto-ends your turn.<br/>
           Next: ${nextName}<br/>
           <span class="accent">Press H for tutorial</span>
         `;
       } else {
         ui.momentumInfo.innerHTML = `
-          Level: <span class="good">${state.playerLevel}</span><br/>
-          XP: ${state.playerXP} / ${xpGoal}<br/>
-          ${streakText}<br/>
-          Best Streak: ${state.bestStreak}<br/>
+          Keep capturing nearby tiles.<br/>
+          Build <span class="good">House</span> + <span class="good">Market</span> early.<br/>
+          Train soldiers from <span class="good">Barracks</span>.<br/>
           <span class="accent">Press H for tutorial</span>
         `;
       }
@@ -2015,21 +2210,14 @@
           Unit: ${u ? `${getFaction(u.owner).name} ${UNIT_TYPES[u.type].label} (HP ${u.hp.toFixed(0)})` : "None"}
         `;
       } else {
-        ui.selectedInfo.textContent = "Click a tile.";
+        ui.selectedInfo.textContent = "Move cursor with keys and press Enter.";
       }
 
-      if (isTwoPlayerMode()) {
-        ui.questList.innerHTML = "<div>Quests are disabled in 2 Player mode.</div>";
-      } else {
-        const questHtml = state.quests.map(q => {
-          const prog = Math.min(q.progress(), q.target);
-          const done = q.done ? "<span class='good'>Completed</span>" : `${prog} / ${q.target}`;
-          return `<div style="margin-bottom:6px;">${q.title}: ${done}</div>`;
-        }).join("");
-        ui.questList.innerHTML = questHtml;
-      }
+      ui.questList.innerHTML = isTwoPlayerMode()
+        ? "<div>Take enemy tiles to win. One action = one turn.</div>"
+        : "<div>Simple mode active: capture territory, build economy, and defeat rivals.</div>";
 
-      ui.endTurnBtn.hidden = !isTwoPlayerMode();
+      ui.endTurnBtn.hidden = true;
       ui.endTurnBtn.disabled = state.gameOver;
       ui.difficultySelect.disabled = isTwoPlayerMode();
       ui.matchStatus.innerHTML = isTwoPlayerMode()
@@ -2055,7 +2243,7 @@
       state.lastFrame = now;
       updateJuice(dt);
 
-      if (!state.gameOver && !state.tutorialOpen) {
+      if (!state.homeOpen && !state.gameOver && !state.tutorialOpen) {
         state.economyTimer += dt;
         state.aiTimer += dt;
         state.messageTimer += dt;
@@ -2091,21 +2279,34 @@
     function init() {
       bindSetupControls();
       resetGame();
-      const hideTutorial = localStorage.getItem("colonyCommand.hideTutorial") === "1";
-      setTutorialOpen(!hideTutorial);
+      state.homeOpen = true;
+      ui.versionBadge.textContent = GAME_VERSION;
+      ui.uiVersion.textContent = GAME_VERSION;
+      ui.homeOverlay.hidden = false;
+      setTutorialOpen(false);
       updateUI();
       requestAnimationFrame(gameLoop);
     }
 
     function bindSetupControls() {
       ui.modeSelect.addEventListener("change", () => {
+        ui.homeModeSelect.value = ui.modeSelect.value;
         state.gameMode = ui.modeSelect.value === GAME_MODE.TWO_PLAYER ? GAME_MODE.TWO_PLAYER : GAME_MODE.SINGLE;
         resetGame();
       });
 
       ui.difficultySelect.addEventListener("change", () => {
+        ui.homeDifficultySelect.value = ui.difficultySelect.value;
         state.aiDifficulty = AI_DIFFICULTIES[ui.difficultySelect.value] ? ui.difficultySelect.value : "normal";
         resetGame();
+      });
+
+      ui.homeModeSelect.addEventListener("change", () => {
+        ui.modeSelect.value = ui.homeModeSelect.value;
+      });
+
+      ui.homeDifficultySelect.addEventListener("change", () => {
+        ui.difficultySelect.value = ui.homeDifficultySelect.value;
       });
 
       ui.endTurnBtn.addEventListener("click", () => {
@@ -2144,7 +2345,14 @@
       state.gameOver = false;
       state.winnerText = "";
       state.tickCount = 0;
-      state.quests = createQuests();
+      state.quests = [];
+      state.tutorialProgress = {
+        selected: false,
+        captured: false,
+        built: false,
+        trained: false,
+        moved: false
+      };
       state.gameMode = ui.modeSelect.value === GAME_MODE.TWO_PLAYER ? GAME_MODE.TWO_PLAYER : GAME_MODE.SINGLE;
       state.aiDifficulty = AI_DIFFICULTIES[ui.difficultySelect.value] ? ui.difficultySelect.value : "normal";
       configureMatch();
@@ -2155,6 +2363,7 @@
       } else {
         logMsg(`Single player match started. AI difficulty: ${state.aiDifficulty}.`, "accent");
       }
+      updateTutorialChecklist();
       updateUI();
     }
 
