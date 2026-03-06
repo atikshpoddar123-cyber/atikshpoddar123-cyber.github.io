@@ -269,6 +269,56 @@
       display: none;
     }
 
+    .meteorOverlay {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background:
+        radial-gradient(circle at 50% 50%, rgba(255, 153, 66, 0.18), transparent 45%),
+        rgba(7, 10, 14, 0.9);
+      backdrop-filter: blur(2px);
+      z-index: 40;
+      padding: 16px;
+    }
+
+    .meteorOverlay[hidden] {
+      display: none;
+    }
+
+    .meteorPanel {
+      width: min(700px, 100%);
+      border: 1px solid rgba(255, 187, 118, 0.8);
+      border-radius: 16px;
+      background: linear-gradient(180deg, rgba(57, 28, 19, 0.95), rgba(29, 15, 12, 0.95));
+      box-shadow: 0 24px 52px rgba(0, 0, 0, 0.55);
+      padding: 18px;
+      text-align: center;
+    }
+
+    .meteorTitle {
+      margin: 0;
+      font-size: 34px;
+      letter-spacing: 0.8px;
+      color: #fff1d9;
+    }
+
+    .meteorPath {
+      margin-top: 8px;
+      font-size: 14px;
+      color: #ffd8ad;
+    }
+
+    .meteorTrajectory {
+      width: 100%;
+      height: 90px;
+      margin-top: 10px;
+      border: 1px solid rgba(255, 176, 111, 0.4);
+      border-radius: 8px;
+      background: linear-gradient(180deg, rgba(31, 16, 13, 0.66), rgba(19, 11, 9, 0.66));
+    }
+
     .homePanel {
       width: min(620px, 100%);
       border-radius: 16px;
@@ -350,6 +400,19 @@
       </div>
       <button id="playBtn" class="playBtn">Play Canvas</button>
       <div class="muted" style="margin-top:8px;">Tip: press <kbd>H</kbd> in-game for the interactive tutorial.</div>
+    </div>
+  </div>
+
+  <div id="meteorOverlay" class="meteorOverlay" hidden>
+    <div class="meteorPanel">
+      <h2 class="meteorTitle">Meteor Incoming</h2>
+      <div id="meteorPath" class="meteorPath">Trajectory</div>
+      <svg class="meteorTrajectory" viewBox="0 0 700 90" preserveAspectRatio="none">
+        <line id="meteorTrail" x1="40" y1="10" x2="660" y2="76" stroke="#ffb17a" stroke-width="4" stroke-dasharray="8 6"/>
+        <circle id="meteorSource" cx="40" cy="10" r="6" fill="#ffd4aa"/>
+        <circle id="meteorTarget" cx="660" cy="76" r="7" fill="#ff7a5f"/>
+      </svg>
+      <div class="muted" style="margin-top:8px;">Impact in under 2 seconds. Brace for damage.</div>
     </div>
   </div>
 
@@ -451,6 +514,11 @@
       </div>
 
       <div class="card">
+        <h2>Release Notes</h2>
+        <div id="releaseNotes" class="muted"></div>
+      </div>
+
+      <div class="card">
         <h2>Event Log</h2>
         <div id="log"></div>
       </div>
@@ -468,7 +536,9 @@
     const TILE = 30;
     const PLAYER_ID = 0;
     const PLAYER_TWO_ID = 1;
-    const GAME_VERSION = "Kingdom Update v1.2";
+    const GAME_VERSION = "Kingdom Update v1.3";
+    const INVADER_OWNER = -2;
+    const METEOR_WARNING_SECONDS = 1.75;
 
     const GAME_MODE = {
       SINGLE: "single",
@@ -482,8 +552,7 @@
     };
 
     const TERRAIN = {
-      LAND: "land",
-      WATER: "water"
+      LAND: "land"
     };
 
     const OWNER_COLORS = {
@@ -529,8 +598,8 @@
     const UNIT_TYPES = {
       soldier: {
         label: "Soldier",
-        hp: 20,
-        atk: 5,
+        hp: 100,
+        atk: 10,
         range: 1,
         moveDelay: 0.42,
         cost: { food: 2, materials: 5, gold: 4 },
@@ -575,7 +644,13 @@
       tutorialOverlay: document.getElementById("tutorialOverlay"),
       closeTutorialBtn: document.getElementById("closeTutorialBtn"),
       dontShowTutorialBtn: document.getElementById("dontShowTutorialBtn"),
-      tutorialChecklist: document.getElementById("tutorialChecklist")
+      tutorialChecklist: document.getElementById("tutorialChecklist"),
+      meteorOverlay: document.getElementById("meteorOverlay"),
+      meteorPath: document.getElementById("meteorPath"),
+      meteorTrail: document.getElementById("meteorTrail"),
+      meteorSource: document.getElementById("meteorSource"),
+      meteorTarget: document.getElementById("meteorTarget"),
+      releaseNotes: document.getElementById("releaseNotes")
     };
 
     let nextUnitId = 1;
@@ -597,8 +672,6 @@
       streakTimer: 0,
       streak: 0,
       bestStreak: 0,
-      playerXP: 0,
-      playerLevel: 1,
       particles: [],
       floatTexts: [],
       screenShake: 0,
@@ -612,6 +685,9 @@
       factions: [],
       aiProfiles: [],
       quests: [],
+      randomEventCooldown: 0,
+      meteorWarning: null,
+      meteorStrikePending: null,
       tutorialProgress: {
         selected: false,
         captured: false,
@@ -706,6 +782,12 @@
       return state.factions.find(f => f.id === id);
     }
 
+    function factionName(id) {
+      if (id === INVADER_OWNER) return "Raiders";
+      const faction = getFaction(id);
+      return faction ? faction.name : "Neutral";
+    }
+
     function getTile(x, y) {
       if (x < 0 || y < 0 || x >= GRID_W || y >= GRID_H) return null;
       return state.map[y][x];
@@ -718,7 +800,8 @@
         terrain,
         owner: -1,
         building: null,
-        hp: 0
+        hp: 0,
+        fertile: false
       };
     }
 
@@ -789,9 +872,7 @@
       for (let y = 0; y < GRID_H; y++) {
         const row = [];
         for (let x = 0; x < GRID_W; x++) {
-          let terrain = TERRAIN.LAND;
-          if (Math.random() < 0.11) terrain = TERRAIN.WATER;
-          row.push(makeTile(x, y, terrain));
+          row.push(makeTile(x, y, TERRAIN.LAND));
         }
         state.map.push(row);
       }
@@ -817,7 +898,6 @@
         for (let dx = -radius; dx <= radius; dx++) {
           const t = getTile(cx + dx, cy + dy);
           if (!t) continue;
-          t.terrain = t.terrain === TERRAIN.WATER ? TERRAIN.LAND : t.terrain;
           t.owner = owner;
         }
       }
@@ -913,25 +993,6 @@
       p.resources.gold += gold;
     }
 
-    function levelXPGoal(level) {
-      return 70 + (level - 1) * 35;
-    }
-
-    function levelUpIfNeeded() {
-      while (state.playerXP >= levelXPGoal(state.playerLevel)) {
-        state.playerXP -= levelXPGoal(state.playerLevel);
-        state.playerLevel += 1;
-
-        const p = getFaction(PLAYER_ID);
-        const reward = 26 + state.playerLevel * 4;
-        p.resources.gold += reward;
-        p.resources.materials += reward;
-        p.resources.morale = clamp(p.resources.morale + 6, 25, 125);
-        logMsg(`Level Up! Colony Lv.${state.playerLevel} (+${reward} Gold/Materials)`, "good");
-        bumpShake(2);
-      }
-    }
-
     function handlePlayerSuccess(x, y, text, color = "#9fffc6") {
       streakBonus();
       const c = toCanvasCenter(x, y);
@@ -993,7 +1054,7 @@
 
     function canClaim(owner, x, y) {
       const t = getTile(x, y);
-      if (!t || t.terrain === TERRAIN.WATER) return false;
+      if (!t) return false;
       if (t.owner === owner) return false;
       if (hasAdjacentOwned(owner, x, y)) return true;
       if (nearbyOwned(owner, x, y)) return true;
@@ -1002,7 +1063,7 @@
 
     function captureTile(owner, x, y, byUnit = false) {
       const t = getTile(x, y);
-      if (!t || t.terrain === TERRAIN.WATER) return false;
+      if (!t) return false;
       if (t.owner === owner) return false;
 
       const previousOwner = t.owner;
@@ -1040,7 +1101,7 @@
     function placeBuilding(x, y, type, owner, free = false) {
       const tile = getTile(x, y);
       if (!tile) return false;
-      if (tile.owner !== owner || tile.terrain === TERRAIN.WATER || tile.building) return false;
+      if (tile.owner !== owner || tile.building) return false;
 
       const faction = getFaction(owner);
       const def = BUILDINGS[type];
@@ -1115,7 +1176,7 @@
       const candidates = [{ x: sx, y: sy }, ...neighbors4(sx, sy)];
       for (const p of candidates) {
         const t = getTile(p.x, p.y);
-        if (!t || t.owner !== owner || t.terrain === TERRAIN.WATER) continue;
+        if (!t || t.owner !== owner) continue;
         if (!getUnitAt(p.x, p.y)) return p;
       }
       return null;
@@ -1130,12 +1191,7 @@
 
     function resolveCombat(attacker, defender) {
       const wasAlive = defender.hp > 0;
-      const attackPower = attacker.atk + (isHumanFaction(attacker.owner) ? 2 : 0);
-      defender.hp -= attackPower;
-      if (defender.hp > 0) {
-        const retaliationMult = isHumanFaction(attacker.owner) ? 0.4 : 0.6;
-        attacker.hp -= Math.max(1, Math.floor(defender.atk * retaliationMult));
-      }
+      defender.hp -= attacker.atk;
       if (wasAlive && defender.hp <= 0) {
         const c = toCanvasCenter(defender.x, defender.y);
         addParticles(c.px, c.py, "#ff9a9a", 14);
@@ -1149,10 +1205,11 @@
 
     function chooseStep(unit, tx, ty) {
       const options = neighbors4(unit.x, unit.y)
-        .filter(p => getTile(p.x, p.y).terrain !== TERRAIN.WATER)
         .filter(p => {
           const other = getUnitAt(p.x, p.y);
-          return !other || other.owner !== unit.owner;
+          if (!other) return true;
+          if (unit.owner === INVADER_OWNER) return true;
+          return other.owner !== unit.owner;
         });
 
       if (!options.length) return null;
@@ -1168,6 +1225,17 @@
       for (const u of state.units) {
         u.moveCooldown = Math.max(0, u.moveCooldown - dt);
         u.attackCooldown = Math.max(0, u.attackCooldown - dt);
+
+        if (u.owner === INVADER_OWNER && (!u.target || Math.random() < 0.33)) {
+          const potential = state.units.filter(other => other.id !== u.id && other.owner !== INVADER_OWNER);
+          if (potential.length) {
+            const targetUnit = randChoice(potential);
+            u.target = { x: targetUnit.x, y: targetUnit.y };
+          } else {
+            u.target = null;
+          }
+        }
+
         if (!u.target) continue;
 
         const t = getTile(u.target.x, u.target.y);
@@ -1182,14 +1250,15 @@
           if (u.attackCooldown > 0) continue;
 
           const enemy = getUnitAt(u.target.x, u.target.y);
-          if (enemy && enemy.owner !== u.owner) {
+          const canAttack = enemy && (u.owner === INVADER_OWNER ? enemy.owner !== INVADER_OWNER : enemy.owner !== u.owner);
+          if (canAttack) {
             resolveCombat(u, enemy);
-            u.attackCooldown = 0.55;
+            u.attackCooldown = 1.0;
           } else {
-            if (captureTile(u.owner, u.target.x, u.target.y, true)) {
+            if (u.owner !== INVADER_OWNER && captureTile(u.owner, u.target.x, u.target.y, true)) {
               if (isHumanFaction(u.owner)) logMsg(`${getFaction(u.owner).name} captured a tile by unit`, "accent");
             }
-            u.attackCooldown = 0.65;
+            u.attackCooldown = 1.0;
           }
           continue;
         }
@@ -1203,9 +1272,10 @@
         }
 
         const blocker = getUnitAt(step.x, step.y);
-        if (blocker && blocker.owner !== u.owner) {
+        const blockedByEnemy = blocker && (u.owner === INVADER_OWNER ? blocker.owner !== INVADER_OWNER : blocker.owner !== u.owner);
+        if (blockedByEnemy) {
           resolveCombat(u, blocker);
-          u.attackCooldown = 0.6;
+          u.attackCooldown = 1.0;
         } else {
           u.x = step.x;
           u.y = step.y;
@@ -1240,6 +1310,7 @@
           const t = state.map[y][x];
           if (t.owner !== id) continue;
           territory++;
+          if (t.fertile) perTick.food += 0.9;
 
           if (t.building) {
             const fx = BUILDINGS[t.building].effects;
@@ -1260,7 +1331,7 @@
 
       const militaryFromUnits = state.units
         .filter(u => u.owner === id)
-        .reduce((sum, u) => sum + (u.type === "archer" ? 2.5 : 2), 0);
+        .reduce((sum, u) => sum + 2, 0);
 
       r.food += perTick.food;
       r.materials += perTick.materials + territory * 0.2;
@@ -1307,7 +1378,143 @@
       }
 
       if (!isTwoPlayerMode()) runQuests();
+      triggerRandomEvents();
       checkVictory(results);
+    }
+
+    function randomLandTile() {
+      const all = [];
+      for (let y = 0; y < GRID_H; y++) {
+        for (let x = 0; x < GRID_W; x++) {
+          all.push(getTile(x, y));
+        }
+      }
+      return all.length ? randChoice(all) : null;
+    }
+
+    function randomSoldierTarget() {
+      const soldiers = state.units.filter(u => u.type === "soldier" && u.owner !== INVADER_OWNER);
+      if (!soldiers.length) return null;
+      return randChoice(soldiers);
+    }
+
+    function spawnInvasionRaiders() {
+      const count = 2 + Math.floor(Math.random() * 3);
+      for (let i = 0; i < count; i++) {
+        const edge = Math.floor(Math.random() * 4);
+        let x = 0;
+        let y = 0;
+        if (edge === 0) { x = 0; y = Math.floor(Math.random() * GRID_H); }
+        if (edge === 1) { x = GRID_W - 1; y = Math.floor(Math.random() * GRID_H); }
+        if (edge === 2) { x = Math.floor(Math.random() * GRID_W); y = 0; }
+        if (edge === 3) { x = Math.floor(Math.random() * GRID_W); y = GRID_H - 1; }
+        if (getUnitAt(x, y)) continue;
+
+        const invader = {
+          id: nextUnitId++,
+          owner: INVADER_OWNER,
+          type: "soldier",
+          x,
+          y,
+          hp: 40,
+          maxHp: 40,
+          atk: 10,
+          range: 1,
+          moveDelay: 0.45,
+          moveCooldown: 0,
+          attackCooldown: 0,
+          target: null
+        };
+        state.units.push(invader);
+      }
+      logMsg("Invasion event: raiders have spawned and are hunting soldiers!", "bad");
+    }
+
+    function triggerFertileLandEvent() {
+      const count = 6 + Math.floor(Math.random() * 5);
+      const used = new Set();
+      for (let i = 0; i < count; i++) {
+        const tile = randomLandTile();
+        if (!tile) break;
+        const key = `${tile.x},${tile.y}`;
+        if (used.has(key)) continue;
+        used.add(key);
+        tile.fertile = true;
+      }
+      logMsg("Fertile Land event: some tiles now produce extra food.", "good");
+    }
+
+    function showMeteorWarning(strikeData) {
+      state.meteorWarning = { endsAt: performance.now() + METEOR_WARNING_SECONDS * 1000 };
+      state.meteorStrikePending = strikeData;
+      ui.meteorOverlay.hidden = false;
+      ui.meteorPath.textContent = `Trajectory: (${strikeData.fromX}, ${strikeData.fromY}) -> (${strikeData.toX}, ${strikeData.toY})`;
+      const sx = 50 + (strikeData.fromX / (GRID_W - 1)) * 600;
+      const sy = 12 + (strikeData.fromY / (GRID_H - 1)) * 66;
+      const tx = 50 + (strikeData.toX / (GRID_W - 1)) * 600;
+      const ty = 12 + (strikeData.toY / (GRID_H - 1)) * 66;
+      ui.meteorTrail.setAttribute("x1", sx.toFixed(2));
+      ui.meteorTrail.setAttribute("y1", sy.toFixed(2));
+      ui.meteorTrail.setAttribute("x2", tx.toFixed(2));
+      ui.meteorTrail.setAttribute("y2", ty.toFixed(2));
+      ui.meteorSource.setAttribute("cx", sx.toFixed(2));
+      ui.meteorSource.setAttribute("cy", sy.toFixed(2));
+      ui.meteorTarget.setAttribute("cx", tx.toFixed(2));
+      ui.meteorTarget.setAttribute("cy", ty.toFixed(2));
+    }
+
+    function applyMeteorStrike() {
+      const strike = state.meteorStrikePending;
+      if (!strike) return;
+      const target = getTile(strike.toX, strike.toY);
+      if (target && target.building) {
+        target.building = null;
+        target.hp = 0;
+      }
+
+      const c = toCanvasCenter(strike.toX, strike.toY);
+      addParticles(c.px, c.py, "#ff9b6e", 30);
+      addFloatText(c.px, c.py - 10, "Meteor!", "#ffd1ad");
+      bumpShake(4);
+
+      for (const unit of state.units) {
+        const d = Math.abs(unit.x - strike.toX) + Math.abs(unit.y - strike.toY);
+        if (d <= 1) {
+          unit.hp = 0;
+          continue;
+        }
+        if (d <= 3) {
+          unit.hp = Math.floor(unit.hp / 2);
+        }
+      }
+      removeDeadUnits();
+      logMsg(`Meteor strike at (${strike.toX}, ${strike.toY})!`, "bad");
+      state.meteorWarning = null;
+      state.meteorStrikePending = null;
+      ui.meteorOverlay.hidden = true;
+    }
+
+    function triggerMeteorEvent() {
+      const target = randomLandTile();
+      if (!target) return;
+      const fromX = Math.floor(Math.random() * GRID_W);
+      const fromY = Math.random() < 0.5 ? 0 : GRID_H - 1;
+      showMeteorWarning({ fromX, fromY, toX: target.x, toY: target.y });
+      logMsg(`Meteor detected. Impact predicted at (${target.x}, ${target.y}).`, "accent");
+    }
+
+    function triggerRandomEvents() {
+      if (state.meteorWarning) return;
+      state.randomEventCooldown = Math.max(0, state.randomEventCooldown - 1);
+      if (state.randomEventCooldown > 0) return;
+      if (Math.random() > 0.28) return;
+
+      const roll = Math.random();
+      if (roll < 0.34) spawnInvasionRaiders();
+      else if (roll < 0.67) triggerMeteorEvent();
+      else triggerFertileLandEvent();
+
+      state.randomEventCooldown = 3 + Math.floor(Math.random() * 3);
     }
 
     function runQuests() {
@@ -1359,7 +1566,6 @@
         for (let x = 0; x < GRID_W; x++) {
           const t = getTile(x, y);
           if (t.owner === owner) continue;
-          if (t.terrain === TERRAIN.WATER) continue;
           if (canClaim(owner, x, y)) candidates.push(t);
         }
       }
@@ -1394,7 +1600,6 @@
       for (let y = 0; y < GRID_H; y++) {
         for (let x = 0; x < GRID_W; x++) {
           const t = getTile(x, y);
-          if (t.terrain === TERRAIN.WATER) continue;
           if (t.owner === faction.id) continue;
           if (canClaim(faction.id, x, y)) options.push(t);
         }
@@ -1425,7 +1630,7 @@
       for (let y = 0; y < GRID_H; y++) {
         for (let x = 0; x < GRID_W; x++) {
           const t = getTile(x, y);
-          if (t.owner === faction.id && !t.building && t.terrain !== TERRAIN.WATER) ownedEmpty.push(t);
+          if (t.owner === faction.id && !t.building) ownedEmpty.push(t);
         }
       }
       if (!ownedEmpty.length) return;
@@ -1464,7 +1669,7 @@
       for (let y = 0; y < GRID_H; y++) {
         for (let x = 0; x < GRID_W; x++) {
           const t = getTile(x, y);
-          if (t.owner !== faction.id && t.terrain !== TERRAIN.WATER) enemyTargets.push(t);
+          if (t.owner !== faction.id) enemyTargets.push(t);
         }
       }
       if (!enemyTargets.length) return;
@@ -1502,7 +1707,7 @@
       return tiles.filter(t =>
         neighbors4(t.x, t.y).some(n => {
           const nt = getTile(n.x, n.y);
-          return nt.owner !== owner && nt.terrain !== TERRAIN.WATER;
+          return nt.owner !== owner;
         })
       );
     }
@@ -1915,24 +2120,23 @@
     // Rendering
     // =====================
     function drawTerrainBase(tile, px, py) {
-      if (tile.terrain === TERRAIN.LAND) {
-        const g = ctx.createLinearGradient(px, py, px + TILE, py + TILE);
-        g.addColorStop(0, "#5a955f");
-        g.addColorStop(1, "#3f7247");
-        ctx.fillStyle = g;
-      } else {
-        const g = ctx.createLinearGradient(px, py, px + TILE, py + TILE);
-        const wave = Math.sin((px + py) * 0.04 + state.animTime * 3.2) * 10;
-        g.addColorStop(0, `rgb(${62 + wave * 0.2}, ${122 + wave * 0.2}, ${170 + wave * 0.1})`);
-        g.addColorStop(1, `rgb(${42 + wave * 0.1}, ${79 + wave * 0.2}, ${112 + wave * 0.12})`);
-        ctx.fillStyle = g;
-      }
+      const g = ctx.createLinearGradient(px, py, px + TILE, py + TILE);
+      g.addColorStop(0, tile.fertile ? "#7fb85f" : "#6a9e55");
+      g.addColorStop(1, tile.fertile ? "#4a8540" : "#4a7440");
+      ctx.fillStyle = g;
       ctx.fillRect(px, py, TILE, TILE);
 
-      ctx.fillStyle = "rgba(255, 255, 255, 0.06)";
-      ctx.fillRect(px + 1, py + 1, TILE - 2, 2);
-      ctx.fillStyle = "rgba(0, 0, 0, 0.08)";
-      ctx.fillRect(px + 1, py + TILE - 3, TILE - 2, 2);
+      ctx.fillStyle = "rgba(255, 255, 255, 0.05)";
+      ctx.fillRect(px + 1, py + 1, TILE - 2, 1.6);
+      ctx.fillStyle = "rgba(0, 0, 0, 0.12)";
+      ctx.fillRect(px + 1, py + TILE - 2.8, TILE - 2, 1.8);
+      ctx.fillStyle = "rgba(26, 65, 25, 0.16)";
+      ctx.fillRect(px + 3, py + 5, 2, 2);
+      ctx.fillRect(px + TILE - 8, py + 9, 2, 2);
+      if (tile.fertile) {
+        ctx.fillStyle = "rgba(200, 255, 128, 0.34)";
+        ctx.fillRect(px + TILE - 6, py + 3, 3, 3);
+      }
     }
 
     function drawBuildingSprite(tile, px, py) {
@@ -2019,11 +2223,13 @@
       for (const u of state.units) {
         const px = u.x * TILE + TILE / 2;
         const py = u.y * TILE + TILE / 2;
-        const palette = u.owner === PLAYER_ID
+        const palette = u.owner === INVADER_OWNER
+          ? { body: "#e7e7e7", trim: "#4f4f4f" }
+          : (u.owner === PLAYER_ID
           ? { body: "#9ee7bf", trim: "#1b4f39" }
           : (u.owner === 1
             ? { body: "#f0a29b", trim: "#5c2723" }
-            : { body: "#f4d596", trim: "#5b4720" });
+            : { body: "#f4d596", trim: "#5b4720" }));
 
         ctx.fillStyle = "rgba(0, 0, 0, 0.28)";
         ctx.beginPath();
@@ -2200,14 +2406,14 @@
       if (state.selectedTile) {
         const { x, y } = state.selectedTile;
         const t = getTile(x, y);
-        const ownerName = t.owner === -1 ? "Neutral" : getFaction(t.owner).name;
+        const ownerName = t.owner === -1 ? "Neutral" : factionName(t.owner);
         const u = getUnitAt(x, y);
         ui.selectedInfo.innerHTML = `
           Tile: (${x}, ${y})<br/>
           Terrain: ${t.terrain}<br/>
           Owner: ${ownerName}<br/>
           Building: ${t.building ? BUILDINGS[t.building].label : "None"}<br/>
-          Unit: ${u ? `${getFaction(u.owner).name} ${UNIT_TYPES[u.type].label} (HP ${u.hp.toFixed(0)})` : "None"}
+          Unit: ${u ? `${factionName(u.owner)} ${UNIT_TYPES[u.type].label} (HP ${u.hp.toFixed(0)})` : "None"}
         `;
       } else {
         ui.selectedInfo.textContent = "Move cursor with keys and press Enter.";
@@ -2223,6 +2429,16 @@
       ui.matchStatus.innerHTML = isTwoPlayerMode()
         ? `<span class="good">2 Player:</span> ${activeName}'s turn`
         : `<span class="good">Single Player</span> - AI ${state.aiDifficulty[0].toUpperCase()}${state.aiDifficulty.slice(1)}`;
+
+      ui.releaseNotes.innerHTML = `
+        <strong>${GAME_VERSION}</strong><br/>
+        - Random events: Invasions, Meteor strikes, Fertile Land<br/>
+        - Meteor warning screen with trajectory + impact delay<br/>
+        - Meteor impact destroys buildings, kills units at center, halves HP within 3 tiles<br/>
+        - Soldier combat rebalance: 100 HP and 10 damage per second<br/>
+        - Removed soldier level system<br/>
+        - Water/blue tiles removed and map visuals upgraded
+      `;
 
       // Disable train buttons if no corresponding building selected.
       if (state.selectedTile) {
@@ -2244,28 +2460,35 @@
       updateJuice(dt);
 
       if (!state.homeOpen && !state.gameOver && !state.tutorialOpen) {
-        state.economyTimer += dt;
-        state.aiTimer += dt;
-        state.messageTimer += dt;
-
-        unitBehavior(dt);
-
-        if (state.economyTimer >= 0.85) {
-          globalEconomyTick();
-          state.economyTimer -= 0.85;
-          updateUI();
-        }
-
-        if (state.aiTimer >= state.aiTickInterval) {
-          if (!isTwoPlayerMode()) {
-            aiTick();
+        if (state.meteorWarning) {
+          if (now >= state.meteorWarning.endsAt) {
+            applyMeteorStrike();
+            updateUI();
           }
-          state.aiTimer -= state.aiTickInterval;
-        }
+        } else {
+          state.economyTimer += dt;
+          state.aiTimer += dt;
+          state.messageTimer += dt;
 
-        if (state.messageTimer >= 0.25) {
-          state.messageTimer -= 0.25;
-          updateUI();
+          unitBehavior(dt);
+
+          if (state.economyTimer >= 0.85) {
+            globalEconomyTick();
+            state.economyTimer -= 0.85;
+            updateUI();
+          }
+
+          if (state.aiTimer >= state.aiTickInterval) {
+            if (!isTwoPlayerMode()) {
+              aiTick();
+            }
+            state.aiTimer -= state.aiTickInterval;
+          }
+
+          if (state.messageTimer >= 0.25) {
+            state.messageTimer -= 0.25;
+            updateUI();
+          }
         }
       }
 
@@ -2337,8 +2560,6 @@
       state.streakTimer = 0;
       state.streak = 0;
       state.bestStreak = 0;
-      state.playerXP = 0;
-      state.playerLevel = 1;
       state.particles = [];
       state.floatTexts = [];
       state.screenShake = 0;
@@ -2346,6 +2567,10 @@
       state.winnerText = "";
       state.tickCount = 0;
       state.quests = [];
+      state.randomEventCooldown = 2;
+      state.meteorWarning = null;
+      state.meteorStrikePending = null;
+      ui.meteorOverlay.hidden = true;
       state.tutorialProgress = {
         selected: false,
         captured: false,
@@ -2361,7 +2586,7 @@
       if (isTwoPlayerMode()) {
         logMsg("2 Player match started. Player 1 goes first.", "accent");
       } else {
-        logMsg(`Single player match started. AI difficulty: ${state.aiDifficulty}.`, "accent");
+        logMsg(`Single player match started. ${GAME_VERSION} active. AI difficulty: ${state.aiDifficulty}.`, "accent");
       }
       updateTutorialChecklist();
       updateUI();
