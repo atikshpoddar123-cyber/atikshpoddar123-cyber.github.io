@@ -492,13 +492,13 @@
         name,
         isPlayer,
         resources: {
-          population: isPlayer ? 15 : 12,
-          food: isPlayer ? 125 : 85,
-          materials: isPlayer ? 180 : 115,
-          gold: isPlayer ? 110 : 75,
+          population: isPlayer ? 18 : 12,
+          food: isPlayer ? 170 : 85,
+          materials: isPlayer ? 260 : 115,
+          gold: isPlayer ? 180 : 75,
           military: 0,
           morale: 100,
-          housing: isPlayer ? 24 : 18
+          housing: isPlayer ? 30 : 18
         },
         stats: {
           tilesCaptured: 0,
@@ -609,6 +609,7 @@
       placeBuilding(e2.x, e2.y - 1, "farm", 2, true);
 
       spawnUnit(PLAYER_ID, "soldier", pc.x + 1, pc.y + 1, true);
+      spawnUnit(PLAYER_ID, "archer", pc.x, pc.y - 1, true);
       spawnUnit(1, "soldier", e1.x - 1, e1.y + 1, true);
       spawnUnit(2, "archer", e2.x - 1, e2.y - 1, true);
     }
@@ -800,11 +801,16 @@
       const attacker = getFaction(owner);
 
       if (t.building) {
+        if (owner === PLAYER_ID) {
+          t.building = null;
+          t.hp = 0;
+        } else {
         if (t.building === "outpost" || t.building === "fort") {
           t.hp -= byUnit ? 7 : 4;
           if (t.hp > 0) return false;
         }
         t.building = null;
+        }
       }
 
       t.owner = owner;
@@ -916,9 +922,11 @@
 
     function resolveCombat(attacker, defender) {
       const wasAlive = defender.hp > 0;
-      defender.hp -= attacker.atk;
+      const attackPower = attacker.atk + (attacker.owner === PLAYER_ID ? 2 : 0);
+      defender.hp -= attackPower;
       if (defender.hp > 0) {
-        attacker.hp -= Math.max(1, Math.floor(defender.atk * 0.6));
+        const retaliationMult = attacker.owner === PLAYER_ID ? 0.4 : 0.6;
+        attacker.hp -= Math.max(1, Math.floor(defender.atk * retaliationMult));
       }
       if (wasAlive && defender.hp <= 0) {
         const c = toCanvasCenter(defender.x, defender.y);
@@ -1123,7 +1131,7 @@
       if (playerTiles <= 0) {
         state.gameOver = true;
         state.winnerText = "Defeat - your colony has fallen.";
-      } else if (!enemiesAlive || playerTiles > totalLand * 0.45) {
+      } else if (!enemiesAlive || playerTiles > totalLand * 0.35) {
         state.gameOver = true;
         state.winnerText = "Victory - your colony dominates the region!";
       }
@@ -1173,9 +1181,9 @@
       }
 
       if (!options.length) return;
-      if (Math.random() > 0.82) return;
+      if (Math.random() > 0.9) return;
 
-      const cost = { materials: 30, gold: 12 };
+      const cost = { materials: 36, gold: 16 };
       if (!hasResources(faction, cost)) return;
 
       const target = randChoice(options);
@@ -1184,7 +1192,7 @@
     }
 
     function aiBuild(faction) {
-      if (Math.random() > 0.68) return;
+      if (Math.random() > 0.8) return;
 
       const ownedEmpty = [];
       for (let y = 0; y < GRID_H; y++) {
@@ -1202,14 +1210,14 @@
     }
 
     function aiTrain(faction) {
-      if (Math.random() > 0.75) return;
+      if (Math.random() > 0.86) return;
 
       const buildings = findBuildings(faction.id);
-      if (buildings.barracks.length && Math.random() < 0.5) {
+      if (buildings.barracks.length && Math.random() < 0.4) {
         const b = randChoice(buildings.barracks);
         spawnUnit(faction.id, "soldier", b.x, b.y, false);
       }
-      if (buildings.archery.length && Math.random() < 0.4) {
+      if (buildings.archery.length && Math.random() < 0.3) {
         const a = randChoice(buildings.archery);
         spawnUnit(faction.id, "archer", a.x, a.y, false);
       }
@@ -1225,7 +1233,7 @@
       }
       if (!enemyTargets.length) return;
 
-      const shouldAttackPlayer = Math.random() < 0.3;
+      const shouldAttackPlayer = Math.random() < 0.18;
       const preferred = shouldAttackPlayer
         ? enemyTargets.filter(t => t.owner === PLAYER_ID)
         : enemyTargets;
@@ -1375,7 +1383,7 @@
       const p = getFaction(PLAYER_ID);
       const x = state.selectedTile.x;
       const y = state.selectedTile.y;
-      const cost = { materials: 24, gold: 10 };
+      const cost = { materials: 12, gold: 4 };
 
       if (!canClaim(PLAYER_ID, x, y)) {
         logMsg("Cannot capture: needs adjacency or outpost influence.", "bad");
@@ -1915,9 +1923,9 @@
           updateUI();
         }
 
-        if (state.aiTimer >= 1.35) {
+        if (state.aiTimer >= 2.1) {
           aiTick();
-          state.aiTimer -= 1.35;
+          state.aiTimer -= 2.1;
         }
 
         if (state.towerTimer >= 1.25) {
