@@ -235,10 +235,10 @@
   <div id="tutorialOverlay" class="tutorialOverlay">
     <div class="tutorialPanel">
       <h2>How To Play Colony Command</h2>
-      <div class="muted">Fast loop: capture, farm, train, repeat. Keep your streak alive for bonus drops.</div>
+      <div class="muted">Fast loop: capture, build, train, repeat. Keep your streak alive for bonus drops.</div>
       <div class="tutorialGrid">
         <div class="tutorialStep"><strong>1. Capture</strong><br/>Click a nearby tile and press <kbd>E</kbd> to claim it.</div>
-        <div class="tutorialStep"><strong>2. Snowball Economy</strong><br/>Use <kbd>2</kbd> Farm and <kbd>3</kbd> Market early.</div>
+        <div class="tutorialStep"><strong>2. Snowball Economy</strong><br/>Use <kbd>1</kbd> House and <kbd>2</kbd> Market early.</div>
         <div class="tutorialStep"><strong>3. Train Units</strong><br/>Build Barracks/Archery, then use <kbd>Q</kbd> / <kbd>R</kbd>.</div>
         <div class="tutorialStep"><strong>4. Keep Momentum</strong><br/>Do actions quickly to stack streak rewards.</div>
       </div>
@@ -273,21 +273,13 @@
 
       <div class="card">
         <h2>Actions</h2>
-        <button id="expandBtn">Expand / Capture Selected Tile (24 Materials, 10 Gold)</button>
+        <button id="expandBtn">Expand / Capture Selected Tile (12 Materials, 4 Gold)</button>
         <div class="row">
           <button data-build="house">Build House</button>
-          <button data-build="farm">Build Farm</button>
-        </div>
-        <div class="row">
           <button data-build="market">Build Market</button>
-          <button data-build="outpost">Build Outpost</button>
         </div>
         <div class="row">
           <button data-build="wall">Build Wall</button>
-          <button data-build="watchtower">Build Watch Tower</button>
-        </div>
-        <div class="row">
-          <button data-build="fort">Build Fort</button>
           <button data-build="barracks">Build Barracks</button>
         </div>
         <button data-build="archery">Build Archery Range</button>
@@ -309,9 +301,9 @@
           <li><kbd>Mouse Left</kbd> select tile/unit</li>
           <li><kbd>Mouse Right</kbd> move selected unit</li>
           <li><kbd>E</kbd> capture selected tile</li>
-          <li><kbd>2</kbd> Farm, <kbd>3</kbd> Market, <kbd>Q</kbd> Soldier</li>
+          <li><kbd>1</kbd> House, <kbd>2</kbd> Market, <kbd>Q</kbd> Soldier</li>
           <li><kbd>Tab</kbd> cycle your units quickly</li>
-          <li><kbd>1</kbd> House, <kbd>2</kbd> Farm, <kbd>3</kbd> Market, <kbd>4</kbd> Outpost, <kbd>5</kbd> Wall, <kbd>6</kbd> Watch Tower, <kbd>7</kbd> Fort, <kbd>8</kbd> Barracks, <kbd>9</kbd> Archery</li>
+          <li><kbd>1</kbd> House, <kbd>2</kbd> Market, <kbd>3</kbd> Wall, <kbd>4</kbd> Barracks, <kbd>5</kbd> Archery</li>
           <li><kbd>Q</kbd> Soldier, <kbd>R</kbd> Archer, <kbd>H</kbd> help</li>
         </ul>
       </div>
@@ -341,7 +333,6 @@
 
     const TERRAIN = {
       LAND: "land",
-      RESOURCE: "resource",
       WATER: "water"
     };
 
@@ -356,38 +347,20 @@
       house: {
         label: "House",
         short: "H",
-        cost: { materials: 24, gold: 6 },
-        effects: { housing: 7 }
-      },
-      farm: {
-        label: "Farm",
-        short: "F",
-        cost: { materials: 20, gold: 5 },
-        effects: { food: 5 }
+        cost: { materials: 24, gold: 8 },
+        effects: { housing: 9, food: 1 }
       },
       market: {
         label: "Market",
         short: "M",
-        cost: { materials: 28, gold: 10 },
-        effects: { gold: 5, materials: 1.5 }
+        cost: { materials: 30, gold: 10 },
+        effects: { food: 1.8, gold: 5, materials: 1.3 }
       },
       wall: {
         label: "Wall",
         short: "W",
         cost: { materials: 24, gold: 4 },
         effects: { defense: 2 }
-      },
-      watchtower: {
-        label: "Watch Tower",
-        short: "T",
-        cost: { materials: 36, gold: 12 },
-        effects: { defense: 3, safety: 2 }
-      },
-      fort: {
-        label: "Fort",
-        short: "Ft",
-        cost: { materials: 48, gold: 20 },
-        effects: { defense: 5, military: 3, safety: 2 }
       },
       barracks: {
         label: "Barracks",
@@ -400,13 +373,6 @@
         short: "A",
         cost: { materials: 40, gold: 14 },
         effects: {}
-      },
-      outpost: {
-        label: "Outpost",
-        short: "O",
-        cost: { materials: 34, gold: 10 },
-        effects: { safety: 1 },
-        influenceRadius: 3
       }
     };
 
@@ -464,7 +430,6 @@
       lastFrame: performance.now(),
       economyTimer: 0,
       aiTimer: 0,
-      towerTimer: 0,
       messageTimer: 0,
       animTime: 0,
       streakTimer: 0,
@@ -483,6 +448,11 @@
         createFaction(1, "Crimson Pact", false),
         createFaction(2, "Dune Dominion", false)
       ],
+      aiProfiles: [
+        null,
+        { aggression: 0.72, defenseBias: 0.5, economyBias: 0.62, focusPlayer: 0.66 },
+        { aggression: 0.8, defenseBias: 0.44, economyBias: 0.56, focusPlayer: 0.8 }
+      ],
       quests: createQuests()
     };
 
@@ -492,17 +462,17 @@
         name,
         isPlayer,
         resources: {
-          population: isPlayer ? 18 : 12,
-          food: isPlayer ? 170 : 85,
-          materials: isPlayer ? 260 : 115,
-          gold: isPlayer ? 180 : 75,
+          population: isPlayer ? 20 : 13,
+          food: isPlayer ? 175 : 95,
+          materials: isPlayer ? 280 : 140,
+          gold: isPlayer ? 190 : 90,
           military: 0,
           morale: 100,
           housing: isPlayer ? 30 : 18
         },
         stats: {
           tilesCaptured: 0,
-          farmsBuilt: 0,
+          marketsBuilt: 0,
           soldiersTrained: 0,
           expansionSuccess: 0
         }
@@ -525,18 +495,18 @@
           progress: () => getFaction(PLAYER_ID).stats.tilesCaptured
         },
         {
-          id: "farm3",
-          title: "Build 3 farms",
+          id: "market3",
+          title: "Build 3 markets",
           target: 3,
           reward: () => {
             const p = getFaction(PLAYER_ID);
-            p.resources.population += 3;
-            p.resources.housing += 2;
-            p.resources.food += 30;
-            logMsg("Quest reward: +3 Population, +30 Food", "good");
+            p.resources.gold += 60;
+            p.resources.materials += 40;
+            p.resources.food += 25;
+            logMsg("Quest reward: +60 Gold, +40 Materials, +25 Food", "good");
           },
           done: false,
-          progress: () => getFaction(PLAYER_ID).stats.farmsBuilt
+          progress: () => getFaction(PLAYER_ID).stats.marketsBuilt
         },
         {
           id: "soldier5",
@@ -579,44 +549,48 @@
       for (let y = 0; y < GRID_H; y++) {
         const row = [];
         for (let x = 0; x < GRID_W; x++) {
-          const r = Math.random();
           let terrain = TERRAIN.LAND;
-          if (r < 0.12) terrain = TERRAIN.WATER;
-          else if (r < 0.23) terrain = TERRAIN.RESOURCE;
+          if (Math.random() < 0.11) terrain = TERRAIN.WATER;
           row.push(makeTile(x, y, terrain));
         }
         state.map.push(row);
       }
 
-      carveColony(4, Math.floor(GRID_H / 2), PLAYER_ID);
-      carveColony(GRID_W - 5, 4, 1);
-      carveColony(GRID_W - 6, GRID_H - 5, 2);
+      carveColony(5, Math.floor(GRID_H / 2), PLAYER_ID, 2);
+      carveColony(GRID_W - 6, 5, 1, 2);
+      carveColony(GRID_W - 7, GRID_H - 6, 2, 2);
 
-      const pc = { x: 4, y: Math.floor(GRID_H / 2) };
-      placeBuilding(pc.x, pc.y, "outpost", PLAYER_ID, true);
+      const pc = { x: 5, y: Math.floor(GRID_H / 2) };
+      placeBuilding(pc.x, pc.y, "house", PLAYER_ID, true);
       placeBuilding(pc.x + 1, pc.y, "barracks", PLAYER_ID, true);
-      placeBuilding(pc.x, pc.y + 1, "farm", PLAYER_ID, true);
+      placeBuilding(pc.x, pc.y + 1, "market", PLAYER_ID, true);
       placeBuilding(pc.x - 1, pc.y, "market", PLAYER_ID, true);
+      placeBuilding(pc.x - 2, pc.y, "wall", PLAYER_ID, true);
 
-      const e1 = { x: GRID_W - 5, y: 4 };
-      const e2 = { x: GRID_W - 6, y: GRID_H - 5 };
-      placeBuilding(e1.x, e1.y, "outpost", 1, true);
+      const e1 = { x: GRID_W - 6, y: 5 };
+      const e2 = { x: GRID_W - 7, y: GRID_H - 6 };
+      placeBuilding(e1.x, e1.y, "house", 1, true);
       placeBuilding(e1.x - 1, e1.y, "barracks", 1, true);
-      placeBuilding(e1.x, e1.y + 1, "farm", 1, true);
+      placeBuilding(e1.x, e1.y + 1, "market", 1, true);
+      placeBuilding(e1.x + 1, e1.y, "wall", 1, true);
 
-      placeBuilding(e2.x, e2.y, "outpost", 2, true);
+      placeBuilding(e2.x, e2.y, "house", 2, true);
       placeBuilding(e2.x - 1, e2.y, "archery", 2, true);
-      placeBuilding(e2.x, e2.y - 1, "farm", 2, true);
+      placeBuilding(e2.x, e2.y - 1, "market", 2, true);
+      placeBuilding(e2.x + 1, e2.y, "wall", 2, true);
 
       spawnUnit(PLAYER_ID, "soldier", pc.x + 1, pc.y + 1, true);
       spawnUnit(PLAYER_ID, "archer", pc.x, pc.y - 1, true);
+      spawnUnit(PLAYER_ID, "soldier", pc.x + 2, pc.y, true);
       spawnUnit(1, "soldier", e1.x - 1, e1.y + 1, true);
+      spawnUnit(1, "archer", e1.x, e1.y - 1, true);
       spawnUnit(2, "archer", e2.x - 1, e2.y - 1, true);
+      spawnUnit(2, "soldier", e2.x, e2.y + 1, true);
     }
 
-    function carveColony(cx, cy, owner) {
-      for (let dy = -1; dy <= 1; dy++) {
-        for (let dx = -1; dx <= 1; dx++) {
+    function carveColony(cx, cy, owner, radius = 1) {
+      for (let dy = -radius; dy <= radius; dy++) {
+        for (let dx = -radius; dx <= radius; dx++) {
           const t = getTile(cx + dx, cy + dy);
           if (!t) continue;
           t.terrain = t.terrain === TERRAIN.WATER ? TERRAIN.LAND : t.terrain;
@@ -760,27 +734,19 @@
     // =====================
     // Territory / Building
     // =====================
-    function outpostsForOwner(owner) {
-      const arr = [];
-      for (let y = 0; y < GRID_H; y++) {
-        for (let x = 0; x < GRID_W; x++) {
-          const t = state.map[y][x];
-          if (t.owner === owner && t.building === "outpost") arr.push(t);
-        }
-      }
-      return arr;
-    }
-
-    function canInfluence(owner, x, y) {
-      const outposts = outpostsForOwner(owner);
-      return outposts.some(op => {
-        const radius = BUILDINGS.outpost.influenceRadius;
-        return Math.abs(op.x - x) + Math.abs(op.y - y) <= radius;
-      });
-    }
-
     function hasAdjacentOwned(owner, x, y) {
       return neighbors4(x, y).some(n => getTile(n.x, n.y).owner === owner);
+    }
+
+    function nearbyOwned(owner, x, y, radius = 2) {
+      for (let dy = -radius; dy <= radius; dy++) {
+        for (let dx = -radius; dx <= radius; dx++) {
+          if (Math.abs(dx) + Math.abs(dy) > radius) continue;
+          const t = getTile(x + dx, y + dy);
+          if (t && t.owner === owner) return true;
+        }
+      }
+      return false;
     }
 
     function canClaim(owner, x, y) {
@@ -788,7 +754,7 @@
       if (!t || t.terrain === TERRAIN.WATER) return false;
       if (t.owner === owner) return false;
       if (hasAdjacentOwned(owner, x, y)) return true;
-      if (canInfluence(owner, x, y)) return true;
+      if (nearbyOwned(owner, x, y)) return true;
       return false;
     }
 
@@ -805,7 +771,7 @@
           t.building = null;
           t.hp = 0;
         } else {
-        if (t.building === "outpost" || t.building === "fort") {
+        if (t.building === "wall") {
           t.hp -= byUnit ? 7 : 4;
           if (t.hp > 0) return false;
         }
@@ -844,9 +810,9 @@
       }
 
       tile.building = type;
-      tile.hp = (type === "fort" ? 22 : type === "outpost" ? 18 : 12);
+      tile.hp = (type === "wall" ? 20 : 12);
 
-      if (type === "farm" && owner === PLAYER_ID) faction.stats.farmsBuilt += 1;
+      if (type === "market" && owner === PLAYER_ID) faction.stats.marketsBuilt += 1;
       if (!free && owner === PLAYER_ID) {
         streakBonus(0.8);
         const c = toCanvasCenter(x, y);
@@ -1016,14 +982,12 @@
       const r = faction.resources;
 
       let territory = 0;
-      let resourceTiles = 0;
       let perTick = {
-        food: id === PLAYER_ID ? 2 : 1,
-        materials: id === PLAYER_ID ? 2 : 1,
-        gold: id === PLAYER_ID ? 2 : 1,
+        food: id === PLAYER_ID ? 2.2 : 1.5,
+        materials: id === PLAYER_ID ? 2 : 1.3,
+        gold: id === PLAYER_ID ? 2 : 1.3,
         housing: 0,
         military: 0,
-        safety: 0,
         defense: 0
       };
 
@@ -1034,11 +998,6 @@
           const t = state.map[y][x];
           if (t.owner !== id) continue;
           territory++;
-          if (t.terrain === TERRAIN.RESOURCE) {
-            resourceTiles++;
-            perTick.materials += 1;
-            perTick.gold += 0.5;
-          }
 
           if (t.building) {
             const fx = BUILDINGS[t.building].effects;
@@ -1047,7 +1006,6 @@
             if (fx.gold) perTick.gold += fx.gold;
             if (fx.housing) perTick.housing += fx.housing;
             if (fx.military) perTick.military += fx.military;
-            if (fx.safety) perTick.safety += fx.safety;
             if (fx.defense) perTick.defense += fx.defense;
           }
 
@@ -1092,10 +1050,10 @@
       r.morale = clamp(r.morale, 25, 125);
 
       if (id === PLAYER_ID && r.food < 0 && state.tickCount % 8 === 0) {
-        logMsg("Food shortage! Build farms or markets.", "bad");
+        logMsg("Food shortage! Build houses or markets.", "bad");
       }
 
-      return { territory, resourceTiles, danger };
+      return { territory, danger };
     }
 
     function globalEconomyTick() {
@@ -1162,11 +1120,15 @@
       for (const faction of state.factions) {
         if (faction.isPlayer) continue;
 
-        aiExpand(faction);
-        aiBuild(faction);
-        aiTrain(faction);
-        aiControlUnits(faction);
+        aiHumanTurn(faction);
       }
+    }
+
+    function aiHumanTurn(faction) {
+      aiExpand(faction);
+      aiBuild(faction);
+      aiTrain(faction);
+      aiControlUnits(faction);
     }
 
     function aiExpand(faction) {
@@ -1181,18 +1143,25 @@
       }
 
       if (!options.length) return;
-      if (Math.random() > 0.9) return;
+      const profile = state.aiProfiles[faction.id];
+      if (Math.random() > 0.62 + profile.aggression * 0.28) return;
 
-      const cost = { materials: 36, gold: 16 };
+      const cost = { materials: 14, gold: 5 };
       if (!hasResources(faction, cost)) return;
 
-      const target = randChoice(options);
+      options.sort((a, b) => {
+        const pressureA = (a.owner === PLAYER_ID ? 2.8 : 1.2) - distanceToOwner(a, PLAYER_ID) * 0.05;
+        const pressureB = (b.owner === PLAYER_ID ? 2.8 : 1.2) - distanceToOwner(b, PLAYER_ID) * 0.05;
+        return pressureB - pressureA;
+      });
+      const target = randChoice(options.slice(0, Math.min(12, options.length)));
       spendResources(faction, cost);
       captureTile(faction.id, target.x, target.y, false);
     }
 
     function aiBuild(faction) {
-      if (Math.random() > 0.8) return;
+      if (Math.random() > 0.76) return;
+      const profile = state.aiProfiles[faction.id];
 
       const ownedEmpty = [];
       for (let y = 0; y < GRID_H; y++) {
@@ -1203,21 +1172,43 @@
       }
       if (!ownedEmpty.length) return;
 
-      const choices = ["farm", "house", "market", "wall", "watchtower", "fort", "outpost", "barracks", "archery"];
+      const buildings = findBuildings(faction.id);
+      const units = state.units.filter(u => u.owner === faction.id);
+      const soldiers = units.filter(u => u.type === "soldier").length;
+      const archers = units.filter(u => u.type === "archer").length;
+      const lowHousing = faction.resources.population > faction.resources.housing - 3;
+      const lowFood = faction.resources.food < faction.resources.population * 1.5;
+      const needsBarracks = buildings.barracks.length === 0 || soldiers < 2;
+      const needsArchery = buildings.archery.length === 0 || archers < 2;
+
+      const choices = [];
+      if (lowHousing) choices.push("house", "house");
+      if (lowFood || Math.random() < profile.economyBias) choices.push("market", "market");
+      if (needsBarracks) choices.push("barracks", "barracks");
+      if (needsArchery) choices.push("archery", "archery");
+      if (Math.random() < profile.defenseBias) choices.push("wall", "wall", "wall");
+      choices.push("house", "market", "wall", "barracks", "archery");
+
       const pick = randChoice(choices);
-      const tile = randChoice(ownedEmpty);
+      const defensiveSpots = frontierTiles(faction.id, ownedEmpty);
+      const tile = pick === "wall" && defensiveSpots.length ? randChoice(defensiveSpots) : randChoice(ownedEmpty);
       placeBuilding(tile.x, tile.y, pick, faction.id, false);
     }
 
     function aiTrain(faction) {
-      if (Math.random() > 0.86) return;
+      const profile = state.aiProfiles[faction.id];
+      if (Math.random() > 0.82 + profile.economyBias * 0.1) return;
 
       const buildings = findBuildings(faction.id);
-      if (buildings.barracks.length && Math.random() < 0.4) {
+      const myUnits = state.units.filter(u => u.owner === faction.id);
+      const soldiers = myUnits.filter(u => u.type === "soldier").length;
+      const archers = myUnits.filter(u => u.type === "archer").length;
+
+      if (buildings.barracks.length && (soldiers <= archers || Math.random() < 0.55)) {
         const b = randChoice(buildings.barracks);
         spawnUnit(faction.id, "soldier", b.x, b.y, false);
       }
-      if (buildings.archery.length && Math.random() < 0.3) {
+      if (buildings.archery.length && (archers <= soldiers + 1 || Math.random() < 0.42)) {
         const a = randChoice(buildings.archery);
         spawnUnit(faction.id, "archer", a.x, a.y, false);
       }
@@ -1233,7 +1224,8 @@
       }
       if (!enemyTargets.length) return;
 
-      const shouldAttackPlayer = Math.random() < 0.18;
+      const profile = state.aiProfiles[faction.id];
+      const shouldAttackPlayer = Math.random() < profile.focusPlayer;
       const preferred = shouldAttackPlayer
         ? enemyTargets.filter(t => t.owner === PLAYER_ID)
         : enemyTargets;
@@ -1241,7 +1233,7 @@
 
       for (const unit of state.units) {
         if (unit.owner !== faction.id) continue;
-        if (unit.target && Math.random() < 0.7) continue;
+        if (unit.target && Math.random() < 0.74) continue;
 
         const target = pickNearest(unit, pool);
         if (target) unit.target = { x: target.x, y: target.y };
@@ -1249,17 +1241,38 @@
     }
 
     function findBuildings(owner) {
-      const result = { barracks: [], archery: [], outpost: [] };
+      const result = { barracks: [], archery: [] };
       for (let y = 0; y < GRID_H; y++) {
         for (let x = 0; x < GRID_W; x++) {
           const t = getTile(x, y);
           if (t.owner !== owner || !t.building) continue;
           if (t.building === "barracks") result.barracks.push(t);
           if (t.building === "archery") result.archery.push(t);
-          if (t.building === "outpost") result.outpost.push(t);
         }
       }
       return result;
+    }
+
+    function frontierTiles(owner, tiles) {
+      return tiles.filter(t =>
+        neighbors4(t.x, t.y).some(n => {
+          const nt = getTile(n.x, n.y);
+          return nt.owner !== owner && nt.terrain !== TERRAIN.WATER;
+        })
+      );
+    }
+
+    function distanceToOwner(tile, owner) {
+      let best = 999;
+      for (let y = 0; y < GRID_H; y++) {
+        for (let x = 0; x < GRID_W; x++) {
+          const t = getTile(x, y);
+          if (t.owner !== owner) continue;
+          const d = Math.abs(tile.x - x) + Math.abs(tile.y - y);
+          if (d < best) best = d;
+        }
+      }
+      return best;
     }
 
     function pickNearest(unit, tiles) {
@@ -1273,33 +1286,6 @@
         }
       }
       return best;
-    }
-
-    // =====================
-    // Defensive Towers
-    // =====================
-    function towerTick() {
-      for (let y = 0; y < GRID_H; y++) {
-        for (let x = 0; x < GRID_W; x++) {
-          const t = getTile(x, y);
-          if (!t.building || (t.building !== "watchtower" && t.building !== "fort")) continue;
-
-          const range = t.building === "fort" ? 2 : 1;
-          const enemies = state.units.filter(u => {
-            if (u.owner === t.owner) return false;
-            return Math.abs(u.x - x) + Math.abs(u.y - y) <= range;
-          });
-
-          if (enemies.length) {
-            const target = enemies[0];
-            target.hp -= t.building === "fort" ? 3 : 2;
-            if (t.owner === PLAYER_ID) {
-              logMsg(`${BUILDINGS[t.building].label} fired at enemy`, "accent");
-            }
-          }
-        }
-      }
-      removeDeadUnits();
     }
 
     // =====================
@@ -1386,7 +1372,7 @@
       const cost = { materials: 12, gold: 4 };
 
       if (!canClaim(PLAYER_ID, x, y)) {
-        logMsg("Cannot capture: needs adjacency or outpost influence.", "bad");
+        logMsg("Cannot capture: needs nearby owned territory.", "bad");
         return;
       }
       if (!hasResources(p, cost)) {
@@ -1560,14 +1546,10 @@
 
       const buildByKey = {
         "1": "house",
-        "2": "farm",
-        "3": "market",
-        "4": "outpost",
-        "5": "wall",
-        "6": "watchtower",
-        "7": "fort",
-        "8": "barracks",
-        "9": "archery"
+        "2": "market",
+        "3": "wall",
+        "4": "barracks",
+        "5": "archery"
       };
       if (buildByKey[key]) {
         e.preventDefault();
@@ -1668,11 +1650,6 @@
         g.addColorStop(0, "#5a955f");
         g.addColorStop(1, "#3f7247");
         ctx.fillStyle = g;
-      } else if (tile.terrain === TERRAIN.RESOURCE) {
-        const g = ctx.createLinearGradient(px, py, px + TILE, py + TILE);
-        g.addColorStop(0, "#8aa654");
-        g.addColorStop(1, "#64793f");
-        ctx.fillStyle = g;
       } else {
         const g = ctx.createLinearGradient(px, py, px + TILE, py + TILE);
         const wave = Math.sin((px + py) * 0.04 + state.animTime * 3.2) * 10;
@@ -1713,11 +1690,6 @@
             ctx.font = "10px Verdana";
             ctx.textAlign = "center";
             ctx.fillText(BUILDINGS[t.building].short, px + TILE / 2, py + TILE / 2 + 3);
-          }
-
-          if (t.terrain === TERRAIN.RESOURCE) {
-            ctx.fillStyle = "rgba(255, 225, 92, 0.7)";
-            ctx.fillRect(px + TILE - 8, py + 2, 6, 6);
           }
 
           ctx.strokeStyle = "rgba(12, 22, 28, 0.32)";
@@ -1912,7 +1884,6 @@
       if (!state.gameOver && !state.tutorialOpen) {
         state.economyTimer += dt;
         state.aiTimer += dt;
-        state.towerTimer += dt;
         state.messageTimer += dt;
 
         unitBehavior(dt);
@@ -1926,11 +1897,6 @@
         if (state.aiTimer >= 2.1) {
           aiTick();
           state.aiTimer -= 2.1;
-        }
-
-        if (state.towerTimer >= 1.25) {
-          towerTick();
-          state.towerTimer -= 1.25;
         }
 
         if (state.messageTimer >= 0.25) {
