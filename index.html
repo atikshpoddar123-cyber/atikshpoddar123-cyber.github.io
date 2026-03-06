@@ -447,7 +447,9 @@
 
     function getTile(x, y) {
       if (x < 0 || y < 0 || x >= GRID_W || y >= GRID_H) return null;
-      return state.map[y][x];
+      const row = state.map[y];
+      if (!row) return null;
+      return row[x] || null;
     }
 
     function neighbors4(x, y) {
@@ -953,6 +955,7 @@
       for (let y = 0; y < GRID_H; y++) {
         for (let x = 0; x < GRID_W; x++) {
           const t = getTile(x, y);
+          if (!t) continue;
           const px = x * TILE;
           const py = y * TILE;
 
@@ -1221,6 +1224,8 @@
     });
 
     window.startGame = startGame;
+    initMap();
+    updateUI();
 
     requestAnimationFrame(updateLoop);
   </script>
