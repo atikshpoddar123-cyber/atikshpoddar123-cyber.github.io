@@ -145,7 +145,16 @@
     .resTitle { font-family: 'Cinzel', serif; font-size: 38px; font-weight: 800; letter-spacing: 3px; text-shadow: 0 0 40px currentColor; margin-bottom: 10px; }
     .resSub { font-size: 11px; color: var(--muted); letter-spacing: 2px; margin-bottom: 18px; }
     .resBtn { width: 180px; text-align: center; font-family: 'Cinzel', serif; font-size: 12px; letter-spacing: 1.5px; padding: 10px; border-color: rgba(200,168,75,0.5); color: var(--accent); }
-    @media (max-width: 980px) {
+    #diffGrid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:5px; margin-bottom:4px; }
+    .diffBtn { font-family:'Cinzel',serif; font-size:10px; font-weight:800; letter-spacing:1px; padding:6px 4px 5px; border-radius:2px; border:1px solid rgba(150,130,70,0.28); background:rgba(20,18,8,0.6); color:var(--muted); cursor:pointer; width:100%; text-align:center; line-height:1; transition:all 0.14s; margin-bottom:0; }
+    .diffBtn .diffSub { display:block; font-family:'Share Tech Mono',monospace; font-size:8px; color:var(--muted); letter-spacing:0; margin-top:3px; font-weight:400; }
+    .diffBtn:hover:not(:disabled) { border-color:var(--accent); color:var(--text); }
+    .diffBtn.selected { border-color:var(--accent); background:rgba(40,32,8,0.9); color:var(--accent); }
+    .diffBtn.danger { border-color:rgba(180,50,50,0.4); color:#c06060; }
+    .diffBtn.danger.selected { background:rgba(40,8,8,0.9); border-color:var(--danger); color:var(--danger); }
+    .diffBtn.unbeat { border-color:rgba(140,60,200,0.4); color:#a060c8; }
+    .diffBtn.unbeat.selected { background:rgba(28,8,40,0.9); border-color:#c088e8; color:#c088e8; }
+
       #gameWrap { grid-template-columns: 1fr; }
       #homePanel { grid-template-columns: 1fr; }
       .homeRight { border-left: none; border-top: 1px solid rgba(150,130,70,0.18); }
@@ -158,30 +167,42 @@
   <div id="homePanel">
     <div class="homeLeft">
       <div class="mainTitle">PROJECT RESOLUTE</div>
-      <div class="mainSub">V2.1 · COMMAND THEATRE</div>
+      <div class="mainSub">V2.2 · COMMAND THEATRE</div>
       <div class="feat"><div class="featIco">⚔</div><div class="featTxt"><strong>Commander Units</strong> — yours dies, you lose. Kill theirs to win.</div></div>
-      <div class="feat"><div class="featIco">⌂</div><div class="featTxt"><strong>Barracks Recruitment</strong> — spend gold each turn to field Soldiers, Warriors &amp; Rangers.</div></div>
+      <div class="feat"><div class="featIco">⌂</div><div class="featTxt"><strong>Barracks Recruitment</strong> — spend gold to field Soldiers, Warriors &amp; Rangers.</div></div>
       <div class="feat"><div class="featIco">◈</div><div class="featTxt"><strong>Gold Economy</strong> — own tiles and barracks to earn income. Outbuild your opponent.</div></div>
-      <div class="feat"><div class="featIco">█</div><div class="featTxt"><strong>Walls with HP</strong> — block enemy movement. Must be destroyed tile by tile.</div></div>
-      <div class="feat"><div class="featIco">⏱</div><div class="featTxt"><strong>Shatter at 2:00</strong> — all structures destroyed. Elimination mode begins.</div></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px;">
-        <button id="playBtn" type="button" onclick="startGame(false)">▶ VS AI</button>
-        <button id="play2Btn" type="button" onclick="startGame(true)" style="font-family:'Cinzel',serif;font-size:13px;font-weight:800;letter-spacing:2.5px;padding:11px;border-color:rgba(200,168,75,0.55);background:linear-gradient(180deg,rgba(44,34,54,0.92),rgba(22,16,32,0.96));color:#c88be8;text-align:center;">⚔ 2 PLAYER</button>
+      <div class="feat"><div class="featIco">█</div><div class="featTxt"><strong>Walls with HP</strong> — block enemy movement. Destroy them to push through.</div></div>
+      <div class="feat"><div class="featIco">⏱</div><div class="featTxt"><strong>Shatter at 5:00</strong> — all structures destroyed. Elimination mode begins.</div></div>
+
+      <div style="margin-top:16px;">
+        <div style="font-size:9px;letter-spacing:2px;color:var(--accent);margin-bottom:8px;">SELECT DIFFICULTY</div>
+        <div id="diffGrid">
+          <button class="diffBtn selected" data-diff="easy"    onclick="selectDiff(this)">EASY<span class="diffSub">Forgiving. Learns nothing.</span></button>
+          <button class="diffBtn"          data-diff="normal"  onclick="selectDiff(this)">NORMAL<span class="diffSub">Steady pressure.</span></button>
+          <button class="diffBtn"          data-diff="hard"    onclick="selectDiff(this)">HARD<span class="diffSub">Hunts your units.</span></button>
+          <button class="diffBtn"          data-diff="master"  onclick="selectDiff(this)">MASTER<span class="diffSub">Economy + tactics.</span></button>
+          <button class="diffBtn danger"   data-diff="demon"   onclick="selectDiff(this)">DEMON<span class="diffSub">Bonus gold. Ruthless.</span></button>
+          <button class="diffBtn unbeat"   data-diff="unbeatable" onclick="selectDiff(this)">UNBEATABLE<span class="diffSub">Cheats. You can't win.</span></button>
+        </div>
+        <div id="diffDesc" style="font-size:10px;color:var(--muted);margin:8px 0 10px;min-height:28px;line-height:1.5;">The AI will make mistakes and rarely press its advantage.</div>
       </div>
-      <div style="margin-top:10px;font-size:9px;color:var(--muted);letter-spacing:1px;">2-Player: Hotseat — Player 1 (blue/left) vs Player 2 (red/right). Take turns on the same screen.</div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <button id="playBtn" type="button" onclick="startGame(false)">▶ VS AI</button>
+        <button type="button" onclick="startGame(true)" style="font-family:'Cinzel',serif;font-size:13px;font-weight:800;letter-spacing:2px;padding:11px;border-color:rgba(180,130,220,0.5);background:linear-gradient(180deg,rgba(44,24,60,0.92),rgba(22,10,36,0.96));color:#c88be8;text-align:center;">⚔ 2 PLAYER</button>
+      </div>
+      <div style="margin-top:8px;font-size:9px;color:var(--muted);letter-spacing:1px;">2-Player: Hotseat on same screen. Difficulty ignored.</div>
     </div>
     <div class="homeRight">
       <div class="patchTitle">PATCH NOTES</div>
-      <div class="pi" style="color:var(--warn);"><strong>v2.1</strong> — Current build</div>
-      <div class="pi">Victory now triggers on <strong>ALL enemy units dead</strong>, not just Commander. Stragglers no longer survive a win.</div>
-      <div class="pi"><strong>2-Player Hotseat</strong> mode added. Both players share one screen, taking turns.</div>
-      <div class="pi">End-of-game screen now shows the <strong>reason for victory</strong> (annihilation, commander kill, etc).</div>
-      <div class="pi">UI now shows <strong>both players' gold</strong> in the status panel during play.</div>
-      <div style="margin-top:10px;" class="patchTitle">v2.0 NOTES</div>
-      <div class="pi"><strong>Barracks</strong> recruit Soldiers, Warriors &amp; Rangers using gold.</div>
-      <div class="pi"><strong>Walls</strong> block all movement, have 4 HP, show crack damage.</div>
-      <div class="pi"><strong>Commander</strong> unit: death = instant loss.</div>
-      <div class="pi"><strong>Gold economy</strong>: tiles + barracks generate income per turn.</div>
+      <div class="pi" style="color:var(--warn);"><strong>v2.2</strong> — Current build</div>
+      <div class="pi"><strong>6 AI difficulties</strong> added: Easy, Normal, Hard, Master, Demon, Unbeatable. Each has unique logic, aggression, and economy behavior.</div>
+      <div class="pi">Demon &amp; Unbeatable receive <strong>bonus gold</strong> per turn and near-perfect decision making.</div>
+      <div class="pi" style="color:var(--warn)"><strong>v2.1</strong></div>
+      <div class="pi">Victory on <strong>all enemy units dead</strong>, not just Commander.</div>
+      <div class="pi"><strong>2-Player Hotseat</strong> mode. <strong>Shatter timer extended to 5:00.</strong></div>
+      <div style="margin-top:8px;" class="patchTitle">v2.0 NOTES</div>
+      <div class="pi">Barracks recruit units · Walls block movement · Commander kill = instant loss · Gold economy.</div>
     </div>
   </div>
 </div>
@@ -304,6 +325,7 @@ const state = {
   shakeUntil:0, particles:[], flashTiles:[],
   gameOver:false, winnerText:"",
   twoPlayer:false,
+  difficulty:"easy",
 };
 let nextUnitId = 1;
 
@@ -445,8 +467,10 @@ function startPhase(phase){
       banner("── PLAYER 2 PHASE ──","#de8f3a","rgba(191,120,50,0.42)");
     } else {
       banner("── OPPONENT PHASE ──","#de6a6a","rgba(191,74,74,0.42)");
+      ui.aiToast.textContent=`${(state.difficulty||"AI").toUpperCase()} CALCULATING…`;
       ui.aiToast.classList.add("show");
-      state.aiThinkUntil = performance.now() + 400 + Math.random()*600;
+      const profile=DIFF[state.difficulty]||DIFF.normal;
+      state.aiThinkUntil = performance.now() + profile.thinkMs + Math.random()*200;
     }
     state.aiTurnCount++;
   }
@@ -716,6 +740,33 @@ function playSound(freq,dur,type="triangle"){
 }
 
 /* ═══════════════════════════════ AI ══════════════════════════════════════ */
+
+// Difficulty profiles
+const DIFF = {
+  easy:       { bonusGold:0, thinkMs:800,  randomTop:6, blunderChance:0.45, aggrMult:0.4, cmdrPriority:0,  buildScore:0.3, recruitScore:0.3 },
+  normal:     { bonusGold:0, thinkMs:600,  randomTop:3, blunderChance:0.15, aggrMult:1.0, cmdrPriority:1,  buildScore:1.0, recruitScore:1.0 },
+  hard:       { bonusGold:0, thinkMs:400,  randomTop:2, blunderChance:0.05, aggrMult:1.4, cmdrPriority:2,  buildScore:1.2, recruitScore:1.3 },
+  master:     { bonusGold:1, thinkMs:300,  randomTop:1, blunderChance:0.0,  aggrMult:1.8, cmdrPriority:3,  buildScore:1.5, recruitScore:1.6 },
+  demon:      { bonusGold:3, thinkMs:200,  randomTop:1, blunderChance:0.0,  aggrMult:2.2, cmdrPriority:4,  buildScore:1.8, recruitScore:2.0 },
+  unbeatable: { bonusGold:6, thinkMs:100,  randomTop:1, blunderChance:0.0,  aggrMult:3.0, cmdrPriority:5,  buildScore:2.2, recruitScore:2.5 },
+};
+
+const DIFF_DESCS = {
+  easy:       "The AI will make mistakes and rarely press its advantage.",
+  normal:     "Balanced play. Will attack, build, and recruit at a reasonable pace.",
+  hard:       "Actively hunts your units. Prioritizes killing over territory.",
+  master:     "Economy-focused and tactical. Gets bonus gold. Reads the board well.",
+  demon:      "Near-perfect decisions with significant gold advantage every turn.",
+  unbeatable: "Gets +6 gold per turn, always plays the optimal move. Genuinely hard to beat.",
+};
+
+function selectDiff(btn){
+  document.querySelectorAll(".diffBtn").forEach(b=>b.classList.remove("selected"));
+  btn.classList.add("selected");
+  state.difficulty=btn.dataset.diff;
+  document.getElementById("diffDesc").textContent=DIFF_DESCS[state.difficulty];
+}
+
 function aiSpawnTile(){
   const brs=barracksOf(AI_ID);
   for(const b of brs){
@@ -727,78 +778,158 @@ function aiSpawnTile(){
   return null;
 }
 
+// Score a potential move destination for a given unit
+function scoreMoveTarget(unit, x, y, d){
+  const t=getTile(x,y);
+  const pCmdr=state.units.find(u=>u.owner===PLAYER_ID&&u.type==="commander");
+  const profile=DIFF[state.difficulty];
+  let sc=2;
+
+  // Capturing unclaimed / enemy tile
+  if(t&&t.owner!==AI_ID) sc+=18;
+
+  // Moving toward player commander
+  if(pCmdr){
+    const distNow=manhattan(unit,pCmdr);
+    const distNew=manhattan({x,y},pCmdr);
+    if(distNew<distNow) sc+=20*profile.aggrMult*Math.min(profile.cmdrPriority,3);
+  }
+
+  // Moving into defensive cover
+  if(defBuff(x,y,AI_ID)) sc+=12;
+
+  // Moving away from danger (enemy attack range)
+  const inDangerNow = state.units.some(u=>u.owner===PLAYER_ID&&manhattan(u,unit)<=u.attackRange);
+  const inDangerNew = state.units.some(u=>u.owner===PLAYER_ID&&manhattan(u,{x,y})<=u.attackRange);
+  if(inDangerNow&&!inDangerNew) sc+=22;
+
+  // Hard+ values flanking moves that get adjacent to enemy units
+  if(profile.aggrMult>=1.4){
+    const adjEnemies=state.units.filter(u=>u.owner===PLAYER_ID&&manhattan({x,y},u)===1).length;
+    sc+=adjEnemies*10*profile.aggrMult;
+  }
+
+  return sc;
+}
+
 function chooseAiAction(){
+  const profile=DIFF[state.difficulty]||DIFF.normal;
   const options=[];
   const aiUnits=state.units.filter(u=>u.owner===AI_ID);
-  const esc=Math.min(1+state.aiTurnCount/8, 3);
+
+  // Blunder: on easy/normal, occasionally just pass
+  if(Math.random()<profile.blunderChance) return {type:ACTION.PASS};
 
   for(const u of aiUnits){
-    // Attack enemy units
+    // ── Attack enemy units ──────────────────────────────────────────────
     const targets=state.units.filter(t=>t.owner===PLAYER_ID&&manhattan(u,t)<=u.attackRange);
     for(const t of targets){
-      let sc=20*esc;
-      if(t.hp<=u.atk) sc+=60;
-      if(t.type==="commander") sc+=90;
+      let sc=25*profile.aggrMult;
+      // Kill shot bonus
+      if(t.hp<=u.atk) sc+=55*profile.aggrMult;
+      // Commander targeting
+      if(t.type==="commander") sc+=30*profile.cmdrPriority*profile.aggrMult;
+      // Low HP target is juicy
+      sc+=((u.atk-t.hp)/u.atk)*20*profile.aggrMult;
+      // Easy AI sometimes ignores valid attacks
+      if(profile.blunderChance>0.2&&Math.random()<0.35) sc*=0.15;
       options.push({sc, act:{type:ACTION.ATTACK,actorId:u.id,targetId:t.id,targetX:t.x,targetY:t.y}});
     }
 
-    // Attack enemy buildings
+    // ── Attack enemy buildings ──────────────────────────────────────────
     for(let y=0;y<GRID_H;y++) for(let x=0;x<GRID_W;x++){
       const t=getTile(x,y);
-      if(t&&t.owner===PLAYER_ID&&t.building&&manhattan(u,{x,y})<=u.attackRange){
-        const sc=t.building==="barracks"?45:22;
-        options.push({sc, act:{type:ACTION.ATTACK_BLDG,actorId:u.id,targetX:x,targetY:y}});
-      }
+      if(!t||t.owner!==PLAYER_ID||!t.building) continue;
+      if(manhattan(u,{x,y})>u.attackRange) continue;
+      let sc=t.building==="barracks"
+        ? 38*profile.buildScore
+        : 18*profile.buildScore;
+      // Hard+ actively demolishes barracks to cripple economy
+      if(profile.aggrMult>=1.4&&t.building==="barracks") sc+=25;
+      options.push({sc, act:{type:ACTION.ATTACK_BLDG,actorId:u.id,targetX:x,targetY:y}});
     }
 
-    // Move
-    const pCmdr=state.units.find(t=>t.owner===PLAYER_ID&&t.type==="commander");
+    // ── Move ────────────────────────────────────────────────────────────
     for(let y=0;y<GRID_H;y++) for(let x=0;x<GRID_W;x++){
-      if(!canMoveTo(x,y)||manhattan(u,{x,y})===0||manhattan(u,{x,y})>u.moveRange) continue;
-      let sc=4;
-      const t=getTile(x,y);
-      if(t&&t.owner!==AI_ID) sc+=16;
-      if(pCmdr && manhattan({x,y},pCmdr)<manhattan(u,pCmdr)) sc+=14*esc;
-      if(defBuff(x,y,AI_ID)) sc+=10;
+      if(!canMoveTo(x,y)) continue;
+      const d=manhattan(u,{x,y});
+      if(d===0||d>u.moveRange) continue;
+      const sc=scoreMoveTarget(u,x,y,d);
       options.push({sc, act:{type:ACTION.MOVE,actorId:u.id,toX:x,toY:y}});
     }
   }
 
-  // Build
+  // ── Build ─────────────────────────────────────────────────────────────
   if(!state.buildLocked){
     const hasBrk=barracksOf(AI_ID).length>0;
+    const brkCount=barracksOf(AI_ID).length;
+    const maxBarracks=profile.buildScore>=1.5?4:profile.buildScore>=1.0?3:2;
+
     for(let y=0;y<GRID_H;y++) for(let x=0;x<GRID_W;x++){
       const t=getTile(x,y);
       if(!t||t.owner!==AI_ID||t.building||getAt(x,y)) continue;
       const nearEnemy=nbrs4(x,y).some(n=>getTile(n.x,n.y)?.owner===PLAYER_ID);
-      if(!hasBrk)       options.push({sc:65, act:{type:ACTION.BUILD,x,y,owner:AI_ID,building:"barracks"}});
-      else if(nearEnemy) options.push({sc:32+esc*4, act:{type:ACTION.BUILD,x,y,owner:AI_ID,building:"wall"}});
-      else if(barracksOf(AI_ID).length<3) options.push({sc:28, act:{type:ACTION.BUILD,x,y,owner:AI_ID,building:"barracks"}});
+
+      if(!hasBrk){
+        // Always prioritize first barracks regardless of difficulty
+        options.push({sc:80, act:{type:ACTION.BUILD,x,y,owner:AI_ID,building:"barracks"}});
+      } else if(nearEnemy){
+        const wallSc=28*profile.buildScore+(profile.aggrMult<1?0:nearEnemy?12:0);
+        options.push({sc:wallSc, act:{type:ACTION.BUILD,x,y,owner:AI_ID,building:"wall"}});
+      } else if(brkCount<maxBarracks){
+        options.push({sc:35*profile.buildScore, act:{type:ACTION.BUILD,x,y,owner:AI_ID,building:"barracks"}});
+      }
     }
   }
 
-  // Recruit
+  // ── Recruit ───────────────────────────────────────────────────────────
   const sp=aiSpawnTile();
   if(sp){
     const g=state.gold[AI_ID];
-    const ut=g>=UNIT_DEFS.warrior.cost?"warrior":g>=UNIT_DEFS.ranger.cost?"ranger":g>=UNIT_DEFS.soldier.cost?"soldier":null;
+    const uc=state.units.filter(u=>u.owner===AI_ID).length;
+    const targetArmy=3+Math.floor(profile.aggrMult*3);
+
+    // Unit preference by difficulty: easy = soldier spam, hard+ = smart mix
+    let ut=null;
+    if(profile.aggrMult<1.0){
+      ut=g>=UNIT_DEFS.soldier.cost?"soldier":null;
+    } else if(profile.aggrMult<1.5){
+      ut=g>=UNIT_DEFS.ranger.cost?"ranger":g>=UNIT_DEFS.soldier.cost?"soldier":null;
+    } else {
+      // Master+ prefers warriors when they can afford it, rangers for range control
+      if(g>=UNIT_DEFS.warrior.cost&&uc<targetArmy) ut="warrior";
+      else if(g>=UNIT_DEFS.ranger.cost) ut="ranger";
+      else if(g>=UNIT_DEFS.soldier.cost) ut="soldier";
+    }
+
     if(ut){
-      const uc=state.units.filter(u=>u.owner===AI_ID).length;
-      const sc=uc<3+esc*2?50+esc*10:18;
-      options.push({sc, act:{type:ACTION.RECRUIT,unitType:ut,spawnX:sp.x,spawnY:sp.y,owner:AI_ID}});
+      const recruitSc=uc<targetArmy
+        ? 55*profile.recruitScore
+        : 20*profile.recruitScore;
+      options.push({sc:recruitSc, act:{type:ACTION.RECRUIT,unitType:ut,spawnX:sp.x,spawnY:sp.y,owner:AI_ID}});
     }
   }
 
   if(!options.length) return {type:ACTION.PASS};
   options.sort((a,b)=>b.sc-a.sc);
-  const pool=options.slice(0,Math.min(3,options.length));
-  return pool[Math.floor(Math.random()*(esc<2?2:1)%pool.length)].act;
+
+  // Pick from top N options (higher randomTop = more chaotic/unpredictable on easy)
+  const poolSize=Math.min(profile.randomTop,options.length);
+  const pick=Math.floor(Math.random()*poolSize);
+  return options[pick].act;
 }
 
 function processAi(now){
-  if(state.twoPlayer) return; // human controls both sides
+  if(state.twoPlayer) return;
   if(state.phase!=="ai"||state.gameOver||state.pendingAction) return;
   if(now<state.aiThinkUntil) return;
+
+  // Demon/Unbeatable get bonus gold every AI turn
+  const profile=DIFF[state.difficulty]||DIFF.normal;
+  if(profile.bonusGold>0){
+    state.gold[AI_ID]+=profile.bonusGold;
+  }
+
   ui.aiToast.classList.remove("show");
   const act=chooseAiAction();
   if(act.type===ACTION.PASS){
@@ -1173,7 +1304,7 @@ function updateUI(){
   const pu=state.units.filter(u=>u.owner===PLAYER_ID).length;
   const au=state.units.filter(u=>u.owner===AI_ID).length;
   const p1lbl=state.twoPlayer?"P1":"Player", p2lbl=state.twoPlayer?"P2":"Enemy";
-  ui.statusInfo.innerHTML=`<span style="color:#6ab0de">▣${pt} ${p1lbl}</span> / <span style="color:#de6a6a">${p2lbl} ${at}▣</span><br><span style="color:#6ab0de">⊕${pu}</span> / <span style="color:#de6a6a">${au}⊕</span> units · ◈${state.gold[0]}/${state.gold[1]}<br><span style="font-size:9px;color:var(--muted)">${state.eliminationMode?"⚡ ELIMINATION MODE":"Shatter at 2:00"}</span>`;
+  ui.statusInfo.innerHTML=`<span style="color:#6ab0de">▣${pt} ${p1lbl}</span> / <span style="color:#de6a6a">${p2lbl} ${at}▣</span><br><span style="color:#6ab0de">⊕${pu}</span> / <span style="color:#de6a6a">${au}⊕</span> units · ◈${state.gold[0]}/${state.gold[1]}<br><span style="font-size:9px;color:var(--muted)">${state.eliminationMode?"⚡ ELIMINATION MODE":"Shatter at 5:00"}</span>`;
 }
 
 function canBuildAt(pos,owner){
@@ -1186,10 +1317,10 @@ function canBuildAt(pos,owner){
 function updateTimer(now){
   if(state.gameOver) return;
   state.elapsedSec=(now-state.gameStartedAt)/1000;
-  if(!state.shatterTriggered&&state.elapsedSec>=120) triggerShatter();
+  if(!state.shatterTriggered&&state.elapsedSec>=300) triggerShatter();
   const s=Math.floor(state.elapsedSec%60), m=Math.floor(state.elapsedSec/60);
   ui.timerHud.textContent=`${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
-  ui.timerHud.classList.toggle("danger", !state.shatterTriggered&&state.elapsedSec>=100);
+  ui.timerHud.classList.toggle("danger", !state.shatterTriggered&&state.elapsedSec>=280);
 }
 
 function loop(now){
@@ -1213,7 +1344,8 @@ function loop(now){
 
 /* ═══════════════════════════════ RESET / START ══════════════════════════ */
 function resetMatch(){
-  const tp=state.twoPlayer; // preserve mode
+  const tp=state.twoPlayer;
+  const diff=state.difficulty;
   Object.assign(state,{
     map:[],units:[],gold:[10,10],income:[0,0],
     phase:"player",actionPoint:1,inputLocked:false,pendingAction:null,
@@ -1222,7 +1354,7 @@ function resetMatch(){
     elapsedSec:0,gameStartedAt:performance.now(),lastFrame:0,
     shatterTriggered:false,eliminationMode:false,buildLocked:false,
     shakeUntil:0,particles:[],flashTiles:[],gameOver:false,winnerText:"",
-    twoPlayer:tp
+    twoPlayer:tp, difficulty:diff
   });
   nextUnitId=1;
   ui.resultOverlay.classList.remove("show");
@@ -1232,7 +1364,7 @@ function resetMatch(){
   const p1lbl=tp?"PLAYER 1":"PLAYER";
   banner(`── ${p1lbl} PHASE ──`,"#6ab0de","rgba(74,143,191,0.42)");
   updateUI();
-  logMsg(`Mode: ${tp?"2-Player Hotseat":"vs AI"} · Protect your Commander.`,"lg");
+  logMsg(`Mode: ${tp?"2-Player Hotseat":"vs AI ["+diff.toUpperCase()+"]"} · Protect your Commander.`,"lg");
   logMsg("Build Barracks → earn gold → recruit units to survive.","lm");
   logMsg("Walls block enemy movement. Attack them to destroy.","lm");
 }
@@ -1240,6 +1372,7 @@ function resetMatch(){
 function startGame(twoPlayer=false){
   if(ui.homeOverlay.hidden||ui.homeOverlay.classList.contains("closing")) return;
   state.twoPlayer=twoPlayer;
+  // difficulty already set by selectDiff clicks (default: easy)
   ui.homeOverlay.classList.add("closing");
   setTimeout(()=>{ui.homeOverlay.hidden=true; ui.homeOverlay.classList.remove("closing");},280);
   resetMatch();
