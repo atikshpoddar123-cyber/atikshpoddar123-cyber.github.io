@@ -4,1230 +4,1240 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>PROJECT RESOLUTE</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #0f1b1e;
-      --bg-2: #1c2924;
-      --panel: rgba(12, 20, 23, 0.92);
-      --panel-border: rgba(188, 215, 220, 0.28);
-      --text: #ecf5f7;
-      --muted: #9fb3b8;
-      --accent: #7dd6e8;
-      --danger: #ff958e;
-      --good: #8ce9a1;
-      --warn: #ffd700;
-      --tile-neutral: #2f3a3d;
-      --tile-player: rgba(66, 160, 224, 0.36);
-      --tile-ai: rgba(224, 97, 82, 0.35);
+      --bg: #0e1209;
+      --bg2: #080c05;
+      --panel: rgba(5, 8, 3, 0.97);
+      --border: rgba(150, 130, 70, 0.35);
+      --accent: #c8a84b;
+      --text: #d4c9a0;
+      --muted: #5a5440;
+      --good: #6dbf63;
+      --danger: #d44444;
+      --warn: #e8b84b;
+      --player: #3a7faf;
+      --enemy: #af3a3a;
     }
-
-    * { box-sizing: border-box; }
-
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      margin: 0;
       min-height: 100vh;
+      background: radial-gradient(ellipse at 15% 0%, rgba(30,46,16,0.7) 0%, transparent 48%),
+                  radial-gradient(ellipse at 85% 100%, rgba(20,14,6,0.9) 0%, transparent 46%),
+                  var(--bg2);
       color: var(--text);
-      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
-      background:
-        radial-gradient(circle at 12% 12%, #30464d 0%, transparent 34%),
-        radial-gradient(circle at 85% 6%, #35382a 0%, transparent 28%),
-        linear-gradient(150deg, var(--bg), var(--bg-2));
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 18px;
+      font-family: 'Share Tech Mono', 'Courier New', monospace;
+      display: flex; align-items: flex-start; justify-content: center;
+      padding: 14px;
     }
-
     #gameWrap {
-      width: min(1260px, 100%);
+      width: min(1300px, 100%);
       display: grid;
-      grid-template-columns: minmax(0, 1fr) 320px;
-      gap: 14px;
-      align-items: start;
+      grid-template-columns: minmax(0, 1fr) 292px;
+      gap: 12px; align-items: start;
     }
-
     #boardPane {
       position: relative;
-      border: 1px solid var(--panel-border);
-      border-radius: 14px;
-      overflow: hidden;
-      background: #172227;
-      box-shadow: 0 24px 46px rgba(0, 0, 0, 0.45);
+      border: 1px solid var(--border);
+      border-radius: 4px; overflow: hidden;
+      background: #080d06;
+      box-shadow: 0 0 0 1px rgba(0,0,0,0.9), 0 24px 60px rgba(0,0,0,0.7), inset 0 0 100px rgba(0,0,0,0.5);
     }
-
-    #gameCanvas {
-      display: block;
-      width: 100%;
-      height: auto;
-      image-rendering: pixelated;
+    #boardPane::after {
+      content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 4;
+      background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.04) 3px, rgba(0,0,0,0.04) 4px);
     }
-
+    #gameCanvas { display: block; width: 100%; height: auto; image-rendering: pixelated; }
     #timerHud {
-      position: absolute;
-      top: 8px;
-      left: 50%;
-      transform: translateX(-50%);
-      padding: 6px 12px;
-      border-radius: 999px;
-      font-weight: 700;
-      border: 1px solid rgba(255, 255, 255, 0.24);
-      background: rgba(8, 12, 14, 0.72);
-      letter-spacing: 0.7px;
-      z-index: 5;
+      position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
+      padding: 4px 14px; border-radius: 2px;
+      font-family: 'Share Tech Mono', monospace; font-size: 13px;
+      border: 1px solid rgba(200,168,75,0.4); background: rgba(3,5,2,0.92);
+      letter-spacing: 3px; z-index: 5; color: var(--accent);
+      transition: color 0.4s;
     }
-
+    #timerHud.danger { color: var(--danger); border-color: rgba(212,68,68,0.5); animation: timerPulse 0.6s ease infinite alternate; }
+    @keyframes timerPulse { from { opacity:1; } to { opacity:0.6; } }
     #turnBanner {
-      position: absolute;
-      top: 8px;
-      left: 8px;
-      min-width: 190px;
-      text-align: center;
-      padding: 8px 12px;
-      border-radius: 10px;
-      font-weight: 800;
-      letter-spacing: 0.8px;
-      background: rgba(8, 12, 14, 0.86);
-      border: 1px solid rgba(255, 255, 255, 0.22);
-      z-index: 5;
-      transform: translateX(-140%);
-      opacity: 0.96;
+      position: absolute; top: 8px; left: 8px; padding: 6px 14px; border-radius: 2px;
+      font-family: 'Cinzel', serif; font-size: 11px; font-weight: 800; letter-spacing: 1.8px;
+      background: rgba(3,5,2,0.92); border: 1px solid rgba(255,255,255,0.14);
+      z-index: 5; transform: translateX(-160%);
     }
-
-    #turnBanner.show {
-      animation: phaseSlide 0.6s ease-out forwards;
-    }
-
-    @keyframes phaseSlide {
-      from { transform: translateX(-140%); }
-      to { transform: translateX(0%); }
-    }
-
+    #turnBanner.show { animation: slideIn 0.35s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+    @keyframes slideIn { from{transform:translateX(-160%);} to{transform:translateX(0);} }
     #aiToast {
-      position: absolute;
-      left: 50%;
-      bottom: 16px;
-      transform: translateX(-50%);
-      padding: 9px 14px;
-      border-radius: 10px;
-      border: 1px solid rgba(255, 255, 255, 0.24);
-      background: rgba(16, 20, 23, 0.9);
-      font-size: 14px;
-      display: none;
-      z-index: 6;
+      position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%);
+      padding: 6px 16px; border-radius: 2px; border: 1px solid rgba(200,168,75,0.28);
+      background: rgba(3,5,2,0.94); font-size: 11px; display: none; z-index: 6;
+      letter-spacing: 0.8px; color: var(--muted);
     }
-
-    #aiToast.show {
-      display: block;
-    }
-
+    #aiToast.show { display: block; }
     #ui {
-      background: var(--panel);
-      border: 1px solid var(--panel-border);
-      border-radius: 14px;
-      padding: 12px;
-      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
-      max-height: 90vh;
-      overflow: auto;
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: 4px; padding: 12px; max-height: 92vh; overflow-y: auto;
     }
-
-    .card {
-      border: 1px solid rgba(197, 220, 225, 0.22);
-      border-radius: 10px;
-      padding: 10px;
-      margin-bottom: 10px;
-      background: rgba(6, 11, 13, 0.25);
-    }
-
-    h1 {
-      margin: 0;
-      font-size: 22px;
-      letter-spacing: 0.4px;
-    }
-
-    h2 {
-      margin: 0 0 6px;
-      font-size: 14px;
-      letter-spacing: 0.35px;
-      color: #dcecf0;
-    }
-
-    .muted { color: var(--muted); }
-    .good { color: var(--good); }
-    .bad { color: var(--danger); }
-
-    .row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 6px;
-    }
-
+    #ui::-webkit-scrollbar { width: 3px; }
+    #ui::-webkit-scrollbar-thumb { background: var(--border); }
+    .gameTitle { font-family: 'Cinzel', serif; font-size: 18px; font-weight: 800; letter-spacing: 2.5px; color: var(--accent); }
+    .gameSub { font-size: 9px; color: var(--muted); letter-spacing: 1.5px; margin-bottom: 10px; }
+    .card { border: 1px solid rgba(150,130,70,0.18); border-radius: 3px; padding: 8px 10px; margin-bottom: 8px; background: rgba(255,255,255,0.015); }
+    .cardTitle { font-size: 9px; letter-spacing: 2px; color: var(--accent); margin-bottom: 6px; text-transform: uppercase; }
+    .cardBody { font-size: 11px; color: var(--muted); line-height: 1.55; }
+    #goldRow { display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px; }
+    #goldAmt { font-size: 22px; font-weight: bold; color: var(--warn); }
+    #goldInc { font-size: 10px; color: var(--muted); }
     button {
-      width: 100%;
-      margin: 4px 0;
-      border-radius: 8px;
-      border: 1px solid rgba(168, 210, 219, 0.52);
-      background: linear-gradient(180deg, #2d5c66, #234a52);
-      color: #ffffff;
-      font-size: 12px;
-      padding: 8px;
-      cursor: pointer;
+      width: 100%; border-radius: 2px;
+      border: 1px solid rgba(150,130,70,0.38);
+      background: linear-gradient(180deg, rgba(36,30,12,0.85), rgba(18,15,5,0.92));
+      color: var(--text); font-family: 'Share Tech Mono', monospace; font-size: 11px;
+      padding: 6px 8px; cursor: pointer; letter-spacing: 0.4px; transition: all 0.12s;
+      margin-bottom: 4px; text-align: left; line-height: 1.4;
     }
-
-    button:disabled {
-      opacity: 0.45;
-      cursor: not-allowed;
-    }
-
-    #buildMenu.locked button[data-build] {
-      filter: grayscale(1);
-    }
-
-    #log {
-      height: 132px;
-      overflow: auto;
-      font-size: 12px;
-      line-height: 1.35;
-      background: rgba(0, 0, 0, 0.24);
-      border-radius: 8px;
-      padding: 6px;
-      border: 1px solid rgba(198, 220, 227, 0.2);
-    }
-
+    button:hover:not(:disabled) { background: linear-gradient(180deg, rgba(56,46,16,0.9), rgba(34,28,8,0.96)); border-color: var(--accent); color: var(--accent); }
+    button:disabled { opacity: 0.3; cursor: not-allowed; }
+    .btnCost { float: right; color: var(--warn); font-size: 10px; }
+    .btnSub { font-size: 9px; color: var(--muted); display: block; margin-top: 1px; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+    .grid2 button { margin-bottom: 0; }
+    #log { height: 110px; overflow-y: auto; font-size: 11px; line-height: 1.5; background: rgba(0,0,0,0.35); border-radius: 2px; padding: 5px 7px; border: 1px solid rgba(150,130,70,0.14); }
+    #log::-webkit-scrollbar { width: 2px; }
+    #log::-webkit-scrollbar-thumb { background: var(--border); }
+    .lg { color: var(--good); } .lb { color: var(--danger); } .lw { color: var(--warn); } .lm { color: var(--muted); }
     #homeOverlay {
-      position: fixed;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
       z-index: 20;
-      background:
-        radial-gradient(circle at 18% 14%, rgba(125, 172, 190, 0.24), transparent 38%),
-        radial-gradient(circle at 86% 10%, rgba(211, 175, 66, 0.24), transparent 28%),
-        rgba(3, 7, 9, 0.86);
-      backdrop-filter: blur(4px);
-      padding: 16px;
+      background: radial-gradient(ellipse at 28% 18%, rgba(50,70,24,0.45), transparent 46%),
+                  radial-gradient(ellipse at 80% 90%, rgba(20,12,4,0.7), transparent 46%),
+                  rgba(2,3,1,0.92);
+      backdrop-filter: blur(8px); padding: 16px;
     }
-
-    #homeOverlay[hidden] {
-      display: none !important;
-    }
-
-    #homeOverlay.closing {
-      pointer-events: none;
-      animation: overlayDismiss 240ms ease forwards;
-    }
-
-    @keyframes overlayDismiss {
-      from {
-        opacity: 1;
-        transform: translateY(0);
-      }
-      to {
-        opacity: 0;
-        transform: translateY(24px);
-      }
-    }
-
+    #homeOverlay[hidden] { display: none !important; }
+    #homeOverlay.closing { pointer-events: none; animation: oOut 280ms ease forwards; }
+    @keyframes oOut { to { opacity:0; transform:scale(0.97); } }
     #homePanel {
-      width: min(930px, 100%);
-      border: 1px solid rgba(214, 232, 238, 0.4);
-      border-radius: 16px;
-      background: linear-gradient(180deg, rgba(15, 24, 27, 0.98), rgba(10, 18, 21, 0.98));
-      box-shadow: 0 28px 56px rgba(0, 0, 0, 0.54);
-      display: grid;
-      grid-template-columns: 1fr 320px;
-      gap: 14px;
-      padding: 18px;
+      width: min(920px, 100%);
+      border: 1px solid rgba(150,130,70,0.45); border-radius: 4px;
+      background: linear-gradient(160deg, rgba(10,14,5,0.99), rgba(5,7,2,0.99));
+      box-shadow: 0 48px 96px rgba(0,0,0,0.75), inset 0 1px 0 rgba(200,168,75,0.18);
+      display: grid; grid-template-columns: 1fr 260px; overflow: hidden;
     }
-
-    .titleBlock h1 {
-      font-family: "Times New Roman", Georgia, serif;
-      font-size: 42px;
-      font-weight: 800;
-      letter-spacing: 1.2px;
-      margin-bottom: 8px;
-    }
-
-    #subtitleBadge {
-      display: inline-block;
-      background: #FFD700;
-      color: #111;
-      font-weight: 800;
-      padding: 6px 10px;
-      border-radius: 999px;
-      letter-spacing: 0.6px;
-      font-size: 12px;
-      margin-bottom: 12px;
-    }
-
-    #playBtn {
-      margin-top: 10px;
-      font-size: 15px;
-      font-weight: 700;
-      padding: 10px;
-      background: linear-gradient(180deg, #3d7f8d, #2f6571);
-    }
-
-    #patchWidget {
-      border: 1px solid rgba(214, 232, 238, 0.28);
-      border-radius: 12px;
-      padding: 10px;
-      background: rgba(255, 255, 255, 0.03);
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-      max-height: 320px;
-    }
-
-    #patchNotes {
-      margin-top: 8px;
-      overflow: auto;
-      font-size: 13px;
-      line-height: 1.4;
-      color: #cfdee2;
-      border-top: 1px solid rgba(214, 232, 238, 0.2);
-      padding-top: 8px;
-    }
-
+    .homeLeft { padding: 26px; }
+    .homeRight { padding: 18px; background: rgba(0,0,0,0.22); border-left: 1px solid rgba(150,130,70,0.18); }
+    .mainTitle { font-family: 'Cinzel', serif; font-size: 34px; font-weight: 800; letter-spacing: 3px; color: var(--accent); line-height: 1; margin-bottom: 4px; }
+    .mainSub { font-size: 10px; color: var(--muted); letter-spacing: 2.5px; margin-bottom: 18px; }
+    .feat { display: flex; gap: 8px; margin-bottom: 10px; align-items: flex-start; font-size: 11px; }
+    .featIco { min-width: 22px; height: 22px; border: 1px solid var(--border); border-radius: 2px; display:flex; align-items:center; justify-content:center; font-size:11px; background: rgba(200,168,75,0.06); color: var(--accent); }
+    .featTxt { color: var(--muted); line-height: 1.5; } .featTxt strong { color: var(--text); }
+    #playBtn { font-family: 'Cinzel', serif; font-size: 13px; font-weight: 800; letter-spacing: 2.5px; padding: 11px; border-color: rgba(200,168,75,0.55); background: linear-gradient(180deg, rgba(54,44,16,0.92), rgba(28,22,6,0.96)); color: var(--accent); text-align: center; margin-top: 12px; transition: all 0.2s; }
+    #playBtn:hover { box-shadow: 0 0 22px rgba(200,168,75,0.2); border-color: var(--accent); }
+    .patchTitle { font-family: 'Cinzel', serif; font-size: 13px; font-weight: 800; color: var(--accent); margin-bottom: 10px; letter-spacing: 0.5px; }
+    .pi { font-size: 11px; color: var(--muted); margin-bottom: 7px; padding-left: 12px; position: relative; line-height: 1.5; }
+    .pi::before { content: '▸'; position: absolute; left: 0; color: var(--accent); }
+    .pi strong { color: var(--text); }
     #resultOverlay {
-      position: absolute;
-      inset: 0;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      background: rgba(0, 0, 0, 0.58);
-      z-index: 7;
-      text-align: center;
-      font-family: "Times New Roman", Georgia, serif;
-      font-size: 40px;
-      letter-spacing: 0.8px;
+      position: absolute; inset: 0; display: none; align-items: center; justify-content: center;
+      flex-direction: column; background: rgba(0,0,0,0.72); z-index: 7;
     }
-
-    #resultOverlay.show {
-      display: flex;
-    }
-
-    @media (max-width: 1050px) {
-      #gameWrap {
-        grid-template-columns: 1fr;
-      }
-      #homePanel {
-        grid-template-columns: 1fr;
-      }
+    #resultOverlay.show { display: flex; }
+    .resTitle { font-family: 'Cinzel', serif; font-size: 38px; font-weight: 800; letter-spacing: 3px; text-shadow: 0 0 40px currentColor; margin-bottom: 10px; }
+    .resSub { font-size: 11px; color: var(--muted); letter-spacing: 2px; margin-bottom: 18px; }
+    .resBtn { width: 180px; text-align: center; font-family: 'Cinzel', serif; font-size: 12px; letter-spacing: 1.5px; padding: 10px; border-color: rgba(200,168,75,0.5); color: var(--accent); }
+    @media (max-width: 980px) {
+      #gameWrap { grid-template-columns: 1fr; }
+      #homePanel { grid-template-columns: 1fr; }
+      .homeRight { border-left: none; border-top: 1px solid rgba(150,130,70,0.18); }
     }
   </style>
 </head>
 <body>
-  <div id="homeOverlay">
-    <div id="homePanel">
-      <div class="titleBlock">
-        <h1>PROJECT RESOLUTE</h1>
-        <div id="subtitleBadge">v1.4: THE CHESS UPDATE</div>
-        <p class="muted" style="margin:0 0 8px;">Discrete command warfare. One side, one move, one consequence.</p>
-        <button id="playBtn" type="button" onclick="startGame()">Deploy Operation</button>
-      </div>
-      <div id="patchWidget">
-        <h2 style="margin:0;">NEW RULES</h2>
-        <div id="patchNotes">
-          <div>• 1 Action Per Turn Limit.</div>
-          <div>• AI Focus Mode Enabled.</div>
-          <div>• The 120s Shatter Event.</div>
-          <div style="margin-top:8px;">Victory can also occur instantly if a faction controls 100% of map tiles at end of turn.</div>
-          <div style="margin-top:8px;">After 2:00, Wall and Barracks structures are purged and the match enters Elimination Mode.</div>
-        </div>
-      </div>
+
+<div id="homeOverlay">
+  <div id="homePanel">
+    <div class="homeLeft">
+      <div class="mainTitle">PROJECT RESOLUTE</div>
+      <div class="mainSub">V2.0 · COMMAND THEATRE</div>
+      <div class="feat"><div class="featIco">⚔</div><div class="featTxt"><strong>Commander Units</strong> — yours dies, you lose. Protect or avenge.</div></div>
+      <div class="feat"><div class="featIco">⌂</div><div class="featTxt"><strong>Barracks Recruitment</strong> — spend gold each turn to field Soldiers, Warriors &amp; Rangers.</div></div>
+      <div class="feat"><div class="featIco">◈</div><div class="featTxt"><strong>Gold Economy</strong> — own tiles and barracks to earn income. Outbuild your opponent.</div></div>
+      <div class="feat"><div class="featIco">█</div><div class="featTxt"><strong>Walls with HP</strong> — block enemy movement. Must be destroyed tile by tile.</div></div>
+      <div class="feat"><div class="featIco">⏱</div><div class="featTxt"><strong>Shatter at 2:00</strong> — all structures destroyed. Elimination mode begins.</div></div>
+      <button id="playBtn" onclick="startGame()">▶ DEPLOY OPERATION</button>
+    </div>
+    <div class="homeRight">
+      <div class="patchTitle">UNIT ROSTER</div>
+      <div class="pi"><strong>Commander</strong> — HP:6 ATK:2 MOV:2. Game ends if killed.</div>
+      <div class="pi"><strong>Soldier ◈5</strong> — HP:3 ATK:1 MOV:2 RNG:1. Reliable backbone.</div>
+      <div class="pi"><strong>Warrior ◈8</strong> — HP:5 ATK:2 MOV:1 RNG:1. Tanky frontline.</div>
+      <div class="pi"><strong>Ranger ◈6</strong> — HP:2 ATK:1 MOV:2 RNG:3. Long-range sniper.</div>
+      <div class="patchTitle" style="margin-top:14px;">HOT KEYS</div>
+      <div class="pi">B — Build Barracks on selected tile</div>
+      <div class="pi">V — Build Wall on selected tile</div>
+      <div class="pi">1/2/3 — Recruit Soldier/Warrior/Ranger</div>
+      <div class="pi">Barracks give +3 gold/turn income</div>
     </div>
   </div>
+</div>
 
-  <div id="gameWrap">
-    <div id="boardPane">
-      <canvas id="gameCanvas" width="900" height="630"></canvas>
-      <div id="timerHud">00:00</div>
-      <div id="turnBanner">PLAYER PHASE</div>
-      <div id="aiToast">AI is calculating strategy...</div>
-      <div id="resultOverlay"></div>
-    </div>
-
-    <div id="ui">
-      <h1>PROJECT RESOLUTE</h1>
-      <div class="muted" style="margin:2px 0 10px;">Update 1.4 - Economy of One</div>
-
-      <div class="card">
-        <h2>Phase</h2>
-        <div id="phaseInfo" class="muted"></div>
-      </div>
-
-      <div class="card">
-        <h2>Selected</h2>
-        <div id="selectedInfo" class="muted">Select a unit to preview movement/attack radius.</div>
-      </div>
-
-      <div class="card" id="buildMenu">
-        <h2>Construct (Consumes Turn)</h2>
-        <div class="row">
-          <button data-build="wall">Build Wall</button>
-          <button data-build="barracks">Build Barracks</button>
-        </div>
-      </div>
-
-      <div class="card">
-        <h2>Status</h2>
-        <div id="statusInfo" class="muted"></div>
-      </div>
-
-      <div class="card">
-        <h2>Event Log</h2>
-        <div id="log"></div>
-      </div>
-    </div>
+<div id="gameWrap">
+  <div id="boardPane">
+    <canvas id="gameCanvas" width="900" height="630"></canvas>
+    <div id="timerHud">00:00</div>
+    <div id="turnBanner">PLAYER PHASE</div>
+    <div id="aiToast">OPPONENT CALCULATING…</div>
+    <div id="resultOverlay"></div>
   </div>
 
-  <script>
-    "use strict";
+  <div id="ui">
+    <div class="gameTitle">PROJECT RESOLUTE</div>
+    <div class="gameSub">V2.0 · COMMAND THEATRE</div>
 
-    const GRID_W = 20;
-    const GRID_H = 14;
-    const TILE = 45;
-    const PLAYER_ID = 0;
-    const AI_ID = 1;
+    <div class="card">
+      <div class="cardTitle">Treasury</div>
+      <div id="goldRow">
+        <span style="color:var(--warn);font-size:14px;">◈</span>
+        <span id="goldAmt">10</span>
+        <span id="goldInc">+0/turn</span>
+      </div>
+    </div>
 
-    const ACTION = {
-      MOVE: "move",
-      ATTACK: "attack",
-      BUILD: "build",
-      PASS: "pass"
-    };
+    <div class="card">
+      <div class="cardTitle">Phase</div>
+      <div id="phaseInfo" class="cardBody">—</div>
+    </div>
 
-    const canvas = document.getElementById("gameCanvas");
-    const ctx = canvas.getContext("2d");
+    <div class="card">
+      <div class="cardTitle">Selection</div>
+      <div id="selectedInfo" class="cardBody">Click a unit or tile.</div>
+    </div>
 
-    const ui = {
-      homeOverlay: document.getElementById("homeOverlay"),
-      playBtn: document.getElementById("playBtn"),
-      timerHud: document.getElementById("timerHud"),
-      turnBanner: document.getElementById("turnBanner"),
-      aiToast: document.getElementById("aiToast"),
-      phaseInfo: document.getElementById("phaseInfo"),
-      selectedInfo: document.getElementById("selectedInfo"),
-      statusInfo: document.getElementById("statusInfo"),
-      log: document.getElementById("log"),
-      buildMenu: document.getElementById("buildMenu"),
-      resultOverlay: document.getElementById("resultOverlay"),
-      buildButtons: Array.from(document.querySelectorAll("button[data-build]"))
-    };
+    <div class="card" id="buildMenu">
+      <div class="cardTitle">Construct (uses action)</div>
+      <div class="grid2">
+        <button data-build="barracks">⌂ Barracks<span class="btnSub">+3◈/turn · recruit</span></button>
+        <button data-build="wall">█ Wall<span class="btnSub">HP:4 · blocks move</span></button>
+      </div>
+    </div>
 
-    const state = {
-      map: [],
-      units: [],
-      selectedUnitId: null,
-      selectedTile: null,
-      hoverTile: null,
-      phase: "player",
-      actionPoint: 1,
-      inputLocked: false,
-      pendingAction: null,
-      phaseStartAt: performance.now(),
-      aiThinkUntil: 0,
-      elapsedSec: 0,
-      gameStartedAt: 0,
-      shatterTriggered: false,
-      eliminationMode: false,
-      buildLocked: false,
-      shakeUntil: 0,
-      particles: [],
-      gameOver: false,
-      winnerText: ""
-    };
+    <div class="card" id="recruitMenu">
+      <div class="cardTitle">Recruit (uses action)</div>
+      <div id="recruitStatus" class="cardBody" style="margin-bottom:6px;">Build a Barracks first.</div>
+      <button data-recruit="soldier">Soldier<span class="btnCost">◈5</span><span class="btnSub">HP:3 ATK:1 MOV:2 RNG:1</span></button>
+      <button data-recruit="warrior">Warrior<span class="btnCost">◈8</span><span class="btnSub">HP:5 ATK:2 MOV:1 RNG:1</span></button>
+      <button data-recruit="ranger">Ranger<span class="btnCost">◈6</span><span class="btnSub">HP:2 ATK:1 MOV:2 RNG:3</span></button>
+    </div>
 
-    let nextUnitId = 1;
+    <div class="card">
+      <div class="cardTitle">Field Report</div>
+      <div id="statusInfo" class="cardBody">—</div>
+    </div>
 
-    function makeTile(x, y) {
-      return { x, y, owner: -1, building: null };
+    <div class="card">
+      <div class="cardTitle">Combat Log</div>
+      <div id="log"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+/* ═══════════════════════════════ CONSTANTS ═══════════════════════════════ */
+const GRID_W = 20, GRID_H = 14, TILE = 45;
+const PLAYER_ID = 0, AI_ID = 1;
+
+const ACTION = { MOVE:"move", ATTACK:"attack", ATTACK_BLDG:"atk_bldg", BUILD:"build", RECRUIT:"recruit", PASS:"pass" };
+
+const UNIT_DEFS = {
+  commander: { maxHp:6, atk:2, moveRange:2, attackRange:1, cost:0,  label:"Commander" },
+  soldier:   { maxHp:3, atk:1, moveRange:2, attackRange:1, cost:5,  label:"Soldier"   },
+  warrior:   { maxHp:5, atk:2, moveRange:1, attackRange:1, cost:8,  label:"Warrior"   },
+  ranger:    { maxHp:2, atk:1, moveRange:2, attackRange:3, cost:6,  label:"Ranger"    },
+};
+
+const BLDG_DEFS = {
+  wall:     { maxHp:4, blocksMove:true },
+  barracks: { maxHp:3, blocksMove:false },
+};
+
+/* ═══════════════════════════════ DOM REFS ════════════════════════════════ */
+const canvas = document.getElementById("gameCanvas");
+const ctx    = canvas.getContext("2d");
+
+const ui = {
+  homeOverlay:  document.getElementById("homeOverlay"),
+  playBtn:      document.getElementById("playBtn"),
+  timerHud:     document.getElementById("timerHud"),
+  turnBanner:   document.getElementById("turnBanner"),
+  aiToast:      document.getElementById("aiToast"),
+  phaseInfo:    document.getElementById("phaseInfo"),
+  selectedInfo: document.getElementById("selectedInfo"),
+  statusInfo:   document.getElementById("statusInfo"),
+  log:          document.getElementById("log"),
+  buildMenu:    document.getElementById("buildMenu"),
+  recruitMenu:  document.getElementById("recruitMenu"),
+  recruitStatus:document.getElementById("recruitStatus"),
+  goldAmt:      document.getElementById("goldAmt"),
+  goldInc:      document.getElementById("goldInc"),
+  resultOverlay:document.getElementById("resultOverlay"),
+  buildBtns:    Array.from(document.querySelectorAll("[data-build]")),
+  recruitBtns:  Array.from(document.querySelectorAll("[data-recruit]")),
+};
+
+/* ═══════════════════════════════ STATE ═══════════════════════════════════ */
+const state = {
+  map:[],units:[],
+  gold:[10,10], income:[0,0],
+  phase:"player", actionPoint:1,
+  inputLocked:false, pendingAction:null,
+  selectedUnitId:null, selectedTile:null, hoverTile:null,
+  aiThinkUntil:0, aiTurnCount:0,
+  elapsedSec:0, gameStartedAt:0, lastFrame:0,
+  shatterTriggered:false, eliminationMode:false, buildLocked:false,
+  shakeUntil:0, particles:[], flashTiles:[],
+  gameOver:false, winnerText:"",
+};
+let nextUnitId = 1;
+
+/* ═══════════════════════════════ HELPERS ═════════════════════════════════ */
+const getTile    = (x,y) => (x<0||y<0||x>=GRID_W||y>=GRID_H) ? null : state.map[y]?.[x] ?? null;
+const getById    = id   => state.units.find(u=>u.id===id) ?? null;
+const getAt      = (x,y)=> state.units.find(u=>u.x===x&&u.y===y) ?? null;
+const activeOwn  = ()   => state.phase==="player" ? PLAYER_ID : AI_ID;
+const enemy      = id   => id===PLAYER_ID ? AI_ID : PLAYER_ID;
+const ownerName  = id   => id===PLAYER_ID ? "Player" : "Opponent";
+const manhattan  = (a,b)=> Math.abs(a.x-b.x)+Math.abs(a.y-b.y);
+
+function nbrs4(x,y){
+  return [{x:x+1,y},{x:x-1,y},{x,y:y+1},{x,y:y-1}]
+    .filter(p=>p.x>=0&&p.y>=0&&p.x<GRID_W&&p.y<GRID_H);
+}
+
+function canMoveTo(x,y){
+  const t = getTile(x,y); if(!t) return false;
+  if(getAt(x,y)) return false;
+  if(t.building==="wall") return false; // walls block movement
+  return true;
+}
+
+function defBuff(x,y,owner){
+  const t=getTile(x,y);
+  return t && t.owner===owner && t.building==="barracks";
+}
+
+function countOwned(owner){
+  let n=0;
+  for(let y=0;y<GRID_H;y++) for(let x=0;x<GRID_W;x++) if(getTile(x,y).owner===owner) n++;
+  return n;
+}
+
+function barracksOf(owner){
+  const res=[];
+  for(let y=0;y<GRID_H;y++) for(let x=0;x<GRID_W;x++){
+    const t=getTile(x,y);
+    if(t && t.building==="barracks" && t.owner===owner) res.push(t);
+  }
+  return res;
+}
+
+function computeIncome(owner){
+  return Math.floor(countOwned(owner)/4) + barracksOf(owner).length*3;
+}
+
+function logMsg(msg,cls=""){
+  const d=document.createElement("div");
+  if(cls) d.className=cls;
+  d.textContent=msg;
+  ui.log.prepend(d);
+  while(ui.log.children.length>90) ui.log.removeChild(ui.log.lastChild);
+}
+
+function addParticles(px,py,color,n=12){
+  for(let i=0;i<n;i++){
+    const a=Math.random()*Math.PI*2, sp=55+Math.random()*130, li=0.28+Math.random()*0.44;
+    state.particles.push({x:px,y:py,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:li,maxLife:li,color,sz:1.4+Math.random()*3.2});
+  }
+}
+
+function flashTile(x,y,color){
+  state.flashTiles.push({x,y,color,life:1,maxLife:1});
+}
+
+function center(x,y){ return {px:x*TILE+TILE/2, py:y*TILE+TILE/2}; }
+
+/* ═══════════════════════════════ INIT MAP ════════════════════════════════ */
+function makeUnit(owner,type,x,y){
+  const d=UNIT_DEFS[type];
+  return {id:nextUnitId++,owner,type,x,y,hp:d.maxHp,maxHp:d.maxHp,atk:d.atk,moveRange:d.moveRange,attackRange:d.attackRange,label:d.label};
+}
+
+// Precompute tile noise for visual variety
+const tileNoise=[];
+for(let i=0;i<GRID_W*GRID_H;i++) tileNoise.push((Math.random()-0.5)*18);
+
+function initMap(){
+  state.map=[]; state.units=[];
+  state.selectedUnitId=null; state.selectedTile=null;
+  nextUnitId=1;
+
+  for(let y=0;y<GRID_H;y++){
+    state.map[y]=[];
+    for(let x=0;x<GRID_W;x++) state.map[y][x]={x,y,owner:-1,building:null,bldgHp:0};
+  }
+
+  // Claim starting territory
+  for(let y=3;y<11;y++) for(let x=0;x<4;x++) getTile(x,y).owner=PLAYER_ID;
+  for(let y=3;y<11;y++) for(let x=GRID_W-4;x<GRID_W;x++) getTile(x,y).owner=AI_ID;
+
+  // Starting buildings
+  const ph=7;
+  getTile(2,ph).building="barracks"; getTile(2,ph).bldgHp=BLDG_DEFS.barracks.maxHp;
+  getTile(3,ph-2).building="wall";   getTile(3,ph-2).bldgHp=BLDG_DEFS.wall.maxHp;
+  getTile(3,ph+2).building="wall";   getTile(3,ph+2).bldgHp=BLDG_DEFS.wall.maxHp;
+
+  getTile(GRID_W-3,ph).building="barracks"; getTile(GRID_W-3,ph).bldgHp=BLDG_DEFS.barracks.maxHp;
+  getTile(GRID_W-4,ph-2).building="wall";   getTile(GRID_W-4,ph-2).bldgHp=BLDG_DEFS.wall.maxHp;
+  getTile(GRID_W-4,ph+2).building="wall";   getTile(GRID_W-4,ph+2).bldgHp=BLDG_DEFS.wall.maxHp;
+
+  // Units
+  state.units.push(makeUnit(PLAYER_ID,"commander",1,ph));
+  state.units.push(makeUnit(PLAYER_ID,"soldier",2,ph-2));
+  state.units.push(makeUnit(PLAYER_ID,"soldier",2,ph+2));
+
+  state.units.push(makeUnit(AI_ID,"commander",GRID_W-2,ph));
+  state.units.push(makeUnit(AI_ID,"soldier",GRID_W-3,ph-2));
+  state.units.push(makeUnit(AI_ID,"soldier",GRID_W-3,ph+2));
+}
+
+/* ═══════════════════════════════ ECONOMY ════════════════════════════════ */
+function grantIncome(owner){
+  const inc=computeIncome(owner);
+  state.gold[owner]+=inc;
+  state.income[owner]=inc;
+  if(owner===PLAYER_ID) logMsg(`Income: +${inc} gold  (total ${state.gold[owner]})`, "lg");
+}
+
+/* ═══════════════════════════════ PHASE ══════════════════════════════════ */
+function startPhase(phase){
+  state.phase=phase; state.actionPoint=1; state.inputLocked=false;
+  state.pendingAction=null; state.selectedUnitId=null; state.selectedTile=null;
+
+  if(phase==="player"){
+    grantIncome(PLAYER_ID);
+    ui.aiToast.classList.remove("show");
+    banner("── PLAYER PHASE ──", "#6ab0de", "rgba(74,143,191,0.42)");
+  } else {
+    grantIncome(AI_ID);
+    banner("── OPPONENT PHASE ──", "#de6a6a", "rgba(191,74,74,0.42)");
+    ui.aiToast.classList.add("show");
+    state.aiThinkUntil = performance.now() + 400 + Math.random()*600;
+    state.aiTurnCount++;
+  }
+  updateUI();
+}
+
+function banner(text, col, border){
+  const b=ui.turnBanner;
+  b.textContent=text; b.style.color=col; b.style.borderColor=border;
+  b.classList.remove("show"); void b.offsetWidth; b.classList.add("show");
+}
+
+/* ═══════════════════════════════ SELECTION ══════════════════════════════ */
+function trySelectOrAct(x,y){
+  if(state.phase!=="player"||state.inputLocked||state.gameOver) return;
+  const clickUnit=getAt(x,y);
+  const tile=getTile(x,y);
+
+  // Select own unit
+  if(clickUnit && clickUnit.owner===PLAYER_ID){
+    state.selectedUnitId=clickUnit.id;
+    state.selectedTile={x,y};
+    return;
+  }
+
+  const sel=getById(state.selectedUnitId);
+
+  if(sel){
+    const d=manhattan(sel,{x,y});
+
+    // Attack enemy unit
+    if(clickUnit && clickUnit.owner===AI_ID && d<=sel.attackRange){
+      if(state.actionPoint>0) queueAction({type:ACTION.ATTACK,actorId:sel.id,targetId:clickUnit.id,targetX:x,targetY:y});
+      return;
     }
 
-    function getTile(x, y) {
-      if (x < 0 || y < 0 || x >= GRID_W || y >= GRID_H) return null;
-      const row = state.map[y];
-      if (!row) return null;
-      return row[x] || null;
+    // Attack enemy building
+    if(!clickUnit && tile && tile.building && tile.owner===AI_ID && d<=sel.attackRange){
+      if(state.actionPoint>0) queueAction({type:ACTION.ATTACK_BLDG,actorId:sel.id,targetX:x,targetY:y});
+      return;
     }
 
-    function neighbors4(x, y) {
-      return [
-        { x: x + 1, y },
-        { x: x - 1, y },
-        { x, y: y + 1 },
-        { x, y: y - 1 }
-      ].filter(p => p.x >= 0 && p.y >= 0 && p.x < GRID_W && p.y < GRID_H);
+    // Move
+    if(!clickUnit && d>0 && d<=sel.moveRange && canMoveTo(x,y)){
+      if(state.actionPoint>0) queueAction({type:ACTION.MOVE,actorId:sel.id,toX:x,toY:y});
+      return;
+    }
+  }
+
+  // Just select the tile / deselect unit
+  state.selectedTile={x,y};
+  state.selectedUnitId=null;
+}
+
+/* ═══════════════════════════════ BUILD & RECRUIT ════════════════════════ */
+function buildAtSelected(building){
+  if(state.phase!=="player"||state.actionPoint<=0||state.inputLocked||state.gameOver||state.buildLocked) return;
+  const pos=state.selectedTile;
+  if(!pos){logMsg("Select an owned tile first.", "lb"); return;}
+  const t=getTile(pos.x,pos.y);
+  if(!t||t.owner!==PLAYER_ID||t.building){logMsg("Need an owned, empty tile.", "lb"); return;}
+  if(getAt(pos.x,pos.y)){logMsg("Tile is occupied.", "lb"); return;}
+  queueAction({type:ACTION.BUILD,x:pos.x,y:pos.y,owner:PLAYER_ID,building});
+}
+
+function recruitUnit(type){
+  if(state.phase!=="player"||state.actionPoint<=0||state.inputLocked||state.gameOver) return;
+  const def=UNIT_DEFS[type];
+  if(!def){return;}
+  if(state.gold[PLAYER_ID]<def.cost){logMsg(`Need ${def.cost} gold. Have ${state.gold[PLAYER_ID]}.`,"lb"); return;}
+  const brs=barracksOf(PLAYER_ID);
+  if(!brs.length){logMsg("No Barracks owned.","lb"); return;}
+
+  let spawn=null;
+  for(const b of brs){
+    for(const n of nbrs4(b.x,b.y)){
+      const nt=getTile(n.x,n.y);
+      if(nt && nt.owner===PLAYER_ID && !getAt(n.x,n.y) && nt.building!=="wall"){spawn=n; break;}
+    }
+    if(spawn) break;
+  }
+  if(!spawn){logMsg("No spawn tile available near Barracks.","lb"); return;}
+  queueAction({type:ACTION.RECRUIT,unitType:type,spawnX:spawn.x,spawnY:spawn.y,owner:PLAYER_ID});
+}
+
+/* ═══════════════════════════════ ACTION QUEUE ═══════════════════════════ */
+function queueAction(action){
+  if(state.actionPoint<=0||state.inputLocked||state.gameOver) return;
+  state.actionPoint=0; state.inputLocked=true;
+  const dur = action.type===ACTION.ATTACK||action.type===ACTION.ATTACK_BLDG ? 400
+            : action.type===ACTION.RECRUIT ? 520
+            : action.type===ACTION.BUILD   ? 460 : 360;
+  state.pendingAction={...action, start:performance.now(), duration:dur};
+  updateUI();
+}
+
+function resolvePending(){
+  const a=state.pendingAction; if(!a) return;
+
+  if(a.type===ACTION.MOVE){
+    const actor=getById(a.actorId);
+    if(actor && canMoveTo(a.toX,a.toY)){
+      actor.x=a.toX; actor.y=a.toY;
+      const t=getTile(a.toX,a.toY);
+      if(t && t.owner!==actor.owner){
+        t.owner=actor.owner;
+        const c=center(t.x,t.y);
+        addParticles(c.px,c.py, actor.owner===PLAYER_ID?"#4a9fd4":"#d44a4a", 6);
+        flashTile(t.x,t.y, actor.owner===PLAYER_ID?"rgba(70,140,200,0.25)":"rgba(200,70,70,0.25)");
+      }
+    }
+  }
+
+  if(a.type===ACTION.ATTACK){
+    const actor=getById(a.actorId);
+    const def=getById(a.targetId);
+    if(actor && def){
+      let dmg=actor.atk;
+      if(defBuff(def.x,def.y,def.owner)) dmg=Math.max(1,dmg-1);
+      def.hp-=dmg;
+      const c=center(def.x,def.y);
+      addParticles(c.px,c.py,"#e8b84b",16);
+      state.shakeUntil=performance.now()+180;
+      logMsg(`${actor.label} hits ${def.label} for ${dmg}dmg (${Math.max(0,def.hp)} left).`,"lw");
+      if(def.hp<=0){
+        addParticles(c.px,c.py, def.owner===PLAYER_ID?"#6090c8":"#c86060", 22);
+        flashTile(def.x,def.y,"rgba(255,200,80,0.35)");
+        logMsg(`${ownerName(def.owner)}'s ${def.label} is destroyed!`,"lb");
+        const t=getTile(def.x,def.y);
+        if(t) t.owner=actor.owner;
+      }
+    }
+  }
+
+  if(a.type===ACTION.ATTACK_BLDG){
+    const actor=getById(a.actorId);
+    const t=getTile(a.targetX,a.targetY);
+    if(actor && t && t.building){
+      const bname=t.building;
+      t.bldgHp-=actor.atk;
+      const c=center(a.targetX,a.targetY);
+      addParticles(c.px,c.py,"#c0a878",18);
+      state.shakeUntil=performance.now()+120;
+      logMsg(`${actor.label} attacks enemy ${bname}! (${Math.max(0,t.bldgHp)} HP left)`,"lw");
+      if(t.bldgHp<=0){
+        t.building=null; t.bldgHp=0;
+        addParticles(c.px,c.py,"#e8d080",28);
+        flashTile(a.targetX,a.targetY,"rgba(230,200,80,0.5)");
+        logMsg(`${ownerName(actor.owner)} razed enemy ${bname}!`,"lg");
+      }
+    }
+  }
+
+  if(a.type===ACTION.BUILD){
+    const t=getTile(a.x,a.y);
+    if(t && t.owner===a.owner && !t.building){
+      t.building=a.building;
+      t.bldgHp=BLDG_DEFS[a.building].maxHp;
+      const c=center(a.x,a.y);
+      addParticles(c.px,c.py, a.building==="barracks"?"#80c0a0":"#b8a888", 14);
+      logMsg(`${ownerName(a.owner)} constructed ${a.building}.`, a.owner===PLAYER_ID?"lg":"lm");
+    }
+  }
+
+  if(a.type===ACTION.RECRUIT){
+    const def=UNIT_DEFS[a.unitType];
+    if(def && state.gold[a.owner]>=def.cost && !getAt(a.spawnX,a.spawnY)){
+      state.gold[a.owner]-=def.cost;
+      const nu=makeUnit(a.owner,a.unitType,a.spawnX,a.spawnY);
+      state.units.push(nu);
+      const c=center(a.spawnX,a.spawnY);
+      addParticles(c.px,c.py, a.owner===PLAYER_ID?"#7ab8e8":"#e87a7a", 20);
+      logMsg(`${ownerName(a.owner)} recruits a ${def.label}!`, a.owner===PLAYER_ID?"lg":"lm");
+    }
+  }
+
+  state.units=state.units.filter(u=>u.hp>0);
+  if(state.selectedUnitId && !getById(state.selectedUnitId)) state.selectedUnitId=null;
+
+  state.pendingAction=null; state.inputLocked=false;
+
+  if(checkCmdrVictory()) return;
+  if(checkSweepVictory()) return;
+  if(state.eliminationMode && checkEliminVictory()) return;
+
+  startPhase(state.phase==="player"?"ai":"player");
+}
+
+/* ═══════════════════════════════ VICTORY ════════════════════════════════ */
+function checkCmdrVictory(){
+  const pc=state.units.find(u=>u.owner===PLAYER_ID&&u.type==="commander");
+  const ac=state.units.find(u=>u.owner===AI_ID&&u.type==="commander");
+  if(!pc&&!ac){endGame("DRAW"); return true;}
+  if(!pc){endGame("OPPONENT VICTORY"); return true;}
+  if(!ac){endGame("PLAYER VICTORY"); return true;}
+  return false;
+}
+
+function checkSweepVictory(){
+  const total=GRID_W*GRID_H;
+  if(countOwned(PLAYER_ID)===total){endGame("PLAYER VICTORY"); return true;}
+  if(countOwned(AI_ID)===total){endGame("OPPONENT VICTORY"); return true;}
+  return false;
+}
+
+function checkEliminVictory(){
+  const p=state.units.filter(u=>u.owner===PLAYER_ID).length;
+  const a=state.units.filter(u=>u.owner===AI_ID).length;
+  if(p>0&&a>0) return false;
+  if(p>0) endGame("PLAYER VICTORY"); else if(a>0) endGame("OPPONENT VICTORY"); else endGame("DRAW");
+  return true;
+}
+
+function endGame(text){
+  state.gameOver=true;
+  const win=text.includes("PLAYER VICTORY");
+  const draw=text.includes("DRAW");
+  const col=win?"#7ab8e8":draw?"#e8b84b":"#e87a7a";
+  const sub=win?"Operation complete. Mission success.":draw?"Mutual annihilation.":"Commander KIA. Mission failed.";
+  ui.resultOverlay.innerHTML=`
+    <div class="resTitle" style="color:${col}">${text}</div>
+    <div class="resSub">${sub}</div>
+    <button class="resBtn" onclick="resetMatch()">▶ REDEPLOY</button>
+  `;
+  ui.resultOverlay.classList.add("show");
+  ui.aiToast.classList.remove("show");
+  updateUI();
+}
+
+/* ═══════════════════════════════ SHATTER ════════════════════════════════ */
+function triggerShatter(){
+  state.shatterTriggered=true; state.eliminationMode=true; state.buildLocked=true;
+  state.shakeUntil=performance.now()+700;
+  playSound(55,0.5,"sawtooth");
+  for(let y=0;y<GRID_H;y++) for(let x=0;x<GRID_W;x++){
+    const t=getTile(x,y);
+    if(t&&t.building){
+      const c=center(x,y);
+      addParticles(c.px,c.py,"#e0d8b8",26); addParticles(c.px,c.py,"#886040",16);
+      t.building=null; t.bldgHp=0;
+    }
+  }
+  logMsg("⚡ SHATTER PROTOCOL: All structures destroyed. Elimination Mode.","lb");
+}
+
+function playSound(freq,dur,type="triangle"){
+  try{
+    const ac=new(window.AudioContext||window.webkitAudioContext)();
+    const o=ac.createOscillator(), g=ac.createGain();
+    o.type=type; o.frequency.setValueAtTime(freq,ac.currentTime);
+    o.frequency.exponentialRampToValueAtTime(freq*0.5,ac.currentTime+dur);
+    g.gain.setValueAtTime(0.0001,ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.45,ac.currentTime+0.04);
+    g.gain.exponentialRampToValueAtTime(0.0001,ac.currentTime+dur);
+    o.connect(g); g.connect(ac.destination);
+    o.start(); o.stop(ac.currentTime+dur);
+  }catch(_){}
+}
+
+/* ═══════════════════════════════ AI ══════════════════════════════════════ */
+function aiSpawnTile(){
+  const brs=barracksOf(AI_ID);
+  for(const b of brs){
+    for(const n of nbrs4(b.x,b.y)){
+      const t=getTile(n.x,n.y);
+      if(t&&t.owner===AI_ID&&!getAt(n.x,n.y)&&t.building!=="wall") return n;
+    }
+  }
+  return null;
+}
+
+function chooseAiAction(){
+  const options=[];
+  const aiUnits=state.units.filter(u=>u.owner===AI_ID);
+  const esc=Math.min(1+state.aiTurnCount/8, 3);
+
+  for(const u of aiUnits){
+    // Attack enemy units
+    const targets=state.units.filter(t=>t.owner===PLAYER_ID&&manhattan(u,t)<=u.attackRange);
+    for(const t of targets){
+      let sc=20*esc;
+      if(t.hp<=u.atk) sc+=60;
+      if(t.type==="commander") sc+=90;
+      options.push({sc, act:{type:ACTION.ATTACK,actorId:u.id,targetId:t.id,targetX:t.x,targetY:t.y}});
     }
 
-    function manhattan(a, b) {
-      return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
-    }
-
-    function getUnitById(id) {
-      return state.units.find(u => u.id === id) || null;
-    }
-
-    function getUnitAt(x, y) {
-      return state.units.find(u => u.x === x && u.y === y) || null;
-    }
-
-    function isUnitAlive(unit) {
-      return unit && unit.hp > 0;
-    }
-
-    function activeOwner() {
-      return state.phase === "player" ? PLAYER_ID : AI_ID;
-    }
-
-    function enemyOwner(owner) {
-      return owner === PLAYER_ID ? AI_ID : PLAYER_ID;
-    }
-
-    function ownerName(owner) {
-      return owner === PLAYER_ID ? "Player" : "Opponent";
-    }
-
-    function logMsg(msg, cls = "") {
-      const row = document.createElement("div");
-      row.className = cls;
-      row.textContent = msg;
-      ui.log.prepend(row);
-      while (ui.log.children.length > 60) {
-        ui.log.removeChild(ui.log.lastChild);
+    // Attack enemy buildings
+    for(let y=0;y<GRID_H;y++) for(let x=0;x<GRID_W;x++){
+      const t=getTile(x,y);
+      if(t&&t.owner===PLAYER_ID&&t.building&&manhattan(u,{x,y})<=u.attackRange){
+        const sc=t.building==="barracks"?45:22;
+        options.push({sc, act:{type:ACTION.ATTACK_BLDG,actorId:u.id,targetX:x,targetY:y}});
       }
     }
 
-    function addParticles(px, py, color, count = 12) {
-      for (let i = 0; i < count; i++) {
-        const a = Math.random() * Math.PI * 2;
-        const speed = 70 + Math.random() * 110;
-        const life = 0.35 + Math.random() * 0.35;
-        state.particles.push({
-          x: px,
-          y: py,
-          vx: Math.cos(a) * speed,
-          vy: Math.sin(a) * speed,
-          life,
-          maxLife: life,
-          color,
-          size: 1.8 + Math.random() * 2.8
-        });
-      }
+    // Move
+    const pCmdr=state.units.find(t=>t.owner===PLAYER_ID&&t.type==="commander");
+    for(let y=0;y<GRID_H;y++) for(let x=0;x<GRID_W;x++){
+      if(!canMoveTo(x,y)||manhattan(u,{x,y})===0||manhattan(u,{x,y})>u.moveRange) continue;
+      let sc=4;
+      const t=getTile(x,y);
+      if(t&&t.owner!==AI_ID) sc+=16;
+      if(pCmdr && manhattan({x,y},pCmdr)<manhattan(u,pCmdr)) sc+=14*esc;
+      if(defBuff(x,y,AI_ID)) sc+=10;
+      options.push({sc, act:{type:ACTION.MOVE,actorId:u.id,toX:x,toY:y}});
+    }
+  }
+
+  // Build
+  if(!state.buildLocked){
+    const hasBrk=barracksOf(AI_ID).length>0;
+    for(let y=0;y<GRID_H;y++) for(let x=0;x<GRID_W;x++){
+      const t=getTile(x,y);
+      if(!t||t.owner!==AI_ID||t.building||getAt(x,y)) continue;
+      const nearEnemy=nbrs4(x,y).some(n=>getTile(n.x,n.y)?.owner===PLAYER_ID);
+      if(!hasBrk)       options.push({sc:65, act:{type:ACTION.BUILD,x,y,owner:AI_ID,building:"barracks"}});
+      else if(nearEnemy) options.push({sc:32+esc*4, act:{type:ACTION.BUILD,x,y,owner:AI_ID,building:"wall"}});
+      else if(barracksOf(AI_ID).length<3) options.push({sc:28, act:{type:ACTION.BUILD,x,y,owner:AI_ID,building:"barracks"}});
+    }
+  }
+
+  // Recruit
+  const sp=aiSpawnTile();
+  if(sp){
+    const g=state.gold[AI_ID];
+    const ut=g>=UNIT_DEFS.warrior.cost?"warrior":g>=UNIT_DEFS.ranger.cost?"ranger":g>=UNIT_DEFS.soldier.cost?"soldier":null;
+    if(ut){
+      const uc=state.units.filter(u=>u.owner===AI_ID).length;
+      const sc=uc<3+esc*2?50+esc*10:18;
+      options.push({sc, act:{type:ACTION.RECRUIT,unitType:ut,spawnX:sp.x,spawnY:sp.y,owner:AI_ID}});
+    }
+  }
+
+  if(!options.length) return {type:ACTION.PASS};
+  options.sort((a,b)=>b.sc-a.sc);
+  const pool=options.slice(0,Math.min(3,options.length));
+  return pool[Math.floor(Math.random()*(esc<2?2:1)%pool.length)].act;
+}
+
+function processAi(now){
+  if(state.phase!=="ai"||state.gameOver||state.pendingAction) return;
+  if(now<state.aiThinkUntil) return;
+  ui.aiToast.classList.remove("show");
+  const act=chooseAiAction();
+  if(act.type===ACTION.PASS){
+    logMsg("Opponent passes.","lm");
+    state.actionPoint=0;
+    startPhase("player");
+    return;
+  }
+  queueAction(act);
+}
+
+/* ═══════════════════════════════ DRAWING ════════════════════════════════ */
+
+/* Tile */
+function drawMap(){
+  for(let y=0;y<GRID_H;y++) for(let x=0;x<GRID_W;x++){
+    const t=getTile(x,y);
+    const px=x*TILE, py=y*TILE;
+    const n=tileNoise[y*GRID_W+x];
+
+    let r,g,b;
+    if(t.owner===PLAYER_ID)    { r=22+n; g=42+n; b=62+n; }
+    else if(t.owner===AI_ID)   { r=58+n; g=22+n; b=22+n; }
+    else                        { r=32+n; g=38+n; b=28+n; }
+
+    ctx.fillStyle=`rgb(${r},${g},${b})`;
+    ctx.fillRect(px,py,TILE,TILE);
+    if((x+y)%2===0){ ctx.fillStyle="rgba(0,0,0,0.04)"; ctx.fillRect(px,py,TILE,TILE); }
+    ctx.strokeStyle="rgba(0,0,0,0.22)"; ctx.lineWidth=0.6;
+    ctx.strokeRect(px+0.3,py+0.3,TILE-0.6,TILE-0.6);
+  }
+}
+
+/* Flash tiles */
+function drawFlashTiles(){
+  for(const f of state.flashTiles){
+    ctx.fillStyle=f.color.replace(")",`,${f.life/f.maxLife})`).replace("rgba","rgba");
+    ctx.fillRect(f.x*TILE,f.y*TILE,TILE,TILE);
+  }
+  for(const f of state.flashTiles) f.life-=0.04;
+  state.flashTiles=state.flashTiles.filter(f=>f.life>0);
+}
+
+/* Buildings */
+function drawBuilding(t){
+  const px=t.x*TILE, py=t.y*TILE;
+  const ip=t.owner===PLAYER_ID, ia=t.owner===AI_ID;
+
+  if(t.building==="wall"){
+    const pct=t.bldgHp/BLDG_DEFS.wall.maxHp;
+    const mc=ip?"#4e6880":ia?"#80504a":"#606058";
+    const dc=ip?"#3a506a":ia?"#6a3e3a":"#4a4a48";
+
+    // Base
+    ctx.fillStyle=mc; ctx.fillRect(px+2,py+2,TILE-4,TILE-4);
+
+    // Crenellations at top
+    ctx.fillStyle=dc;
+    ctx.fillRect(px+3,py+2,11,9);
+    ctx.fillRect(px+17,py+2,11,9);
+    ctx.fillRect(px+31,py+2,11,9);
+
+    // Mortar lines
+    ctx.strokeStyle="rgba(0,0,0,0.35)"; ctx.lineWidth=1;
+    ctx.beginPath();
+    for(let i=1;i<3;i++){ctx.moveTo(px+2,py+11+i*10);ctx.lineTo(px+TILE-2,py+11+i*10);}
+    for(let i=1;i<4;i++){ctx.moveTo(px+2+i*10,py+12);ctx.lineTo(px+2+i*10,py+TILE-2);}
+    ctx.stroke();
+
+    // Cracks from damage
+    if(pct<0.75){
+      ctx.strokeStyle="rgba(0,0,0,0.55)"; ctx.lineWidth=1.2;
+      ctx.beginPath(); ctx.moveTo(px+14,py+8); ctx.lineTo(px+18,py+26); ctx.stroke();
+    }
+    if(pct<0.45){
+      ctx.beginPath(); ctx.moveTo(px+30,py+10); ctx.lineTo(px+26,py+34); ctx.stroke();
+      ctx.fillStyle="rgba(0,0,0,0.3)"; ctx.fillRect(px+12,py+20,5,5);
     }
 
-    function toCanvasCenter(x, y) {
-      return { px: x * TILE + TILE / 2, py: y * TILE + TILE / 2 };
-    }
+    // HP bar
+    ctx.fillStyle="rgba(0,0,0,0.65)"; ctx.fillRect(px+3,py+TILE-5,TILE-6,4);
+    ctx.fillStyle=pct>0.55?"#6dbf63":pct>0.28?"#e8b84b":"#d44444";
+    ctx.fillRect(px+3,py+TILE-5,(TILE-6)*Math.max(0,pct),4);
+  }
 
-    function hasDefensiveBuffAt(x, y, owner) {
-      const t = getTile(x, y);
-      if (!t || t.owner !== owner) return false;
-      return t.building === "wall" || t.building === "barracks";
-    }
+  if(t.building==="barracks"){
+    const pct=t.bldgHp/BLDG_DEFS.barracks.maxHp;
+    const mc=ip?"#2e5a4a":ia?"#5a2e2e":"#4a4a2a";
+    const rc=ip?"#243e34":ia?"#3e2424":"#363620";
+    const fc=ip?"#3a7faf":ia?"#af3a3a":"#888866";
 
-    function tileInAttackRangeOfOwner(x, y, owner) {
-      for (const u of state.units) {
-        if (!isUnitAlive(u) || u.owner !== owner) continue;
-        if (Math.abs(u.x - x) + Math.abs(u.y - y) <= u.attackRange) {
-          return true;
-        }
+    // Main body
+    ctx.fillStyle=mc; ctx.fillRect(px+4,py+10,TILE-8,TILE-13);
+
+    // Roof
+    ctx.fillStyle=rc;
+    ctx.beginPath();
+    ctx.moveTo(px+2,py+12); ctx.lineTo(px+TILE/2,py+4); ctx.lineTo(px+TILE-2,py+12);
+    ctx.closePath(); ctx.fill();
+
+    // Flag pole + flag
+    ctx.fillStyle="rgba(0,0,0,0.6)"; ctx.fillRect(px+TILE/2-1,py+2,2,7);
+    ctx.fillStyle=fc;
+    ctx.beginPath(); ctx.moveTo(px+TILE/2+1,py+2); ctx.lineTo(px+TILE/2+10,py+5); ctx.lineTo(px+TILE/2+1,py+8); ctx.closePath(); ctx.fill();
+
+    // Windows
+    ctx.fillStyle="rgba(180,210,255,0.22)";
+    ctx.fillRect(px+7,py+14,8,7); ctx.fillRect(px+TILE-15,py+14,8,7);
+
+    // Door
+    ctx.fillStyle=rc; ctx.fillRect(px+TILE/2-4,py+TILE-12,8,9);
+    // Door arch
+    ctx.beginPath(); ctx.arc(px+TILE/2,py+TILE-12,4,Math.PI,0); ctx.fill();
+
+    // HP bar
+    ctx.fillStyle="rgba(0,0,0,0.65)"; ctx.fillRect(px+3,py+TILE-5,TILE-6,4);
+    ctx.fillStyle=pct>0.55?"#6dbf63":pct>0.28?"#e8b84b":"#d44444";
+    ctx.fillRect(px+3,py+TILE-5,(TILE-6)*Math.max(0,pct),4);
+  }
+}
+
+/* Units */
+function drawUnit(u,pulse){
+  const px=u.x*TILE+TILE/2, py=u.y*TILE+TILE/2;
+  const ip=u.owner===PLAYER_ID;
+  const isSel=u.id===state.selectedUnitId;
+  const isAct=activeOwn()===u.owner && state.actionPoint>0 && !state.inputLocked && state.phase==="player";
+
+  const mainC=ip?"#3a7faf":"#af3a3a";
+  const lightC=ip?"#80b8e0":"#e08080";
+  const darkC=ip?"#1e4e78":"#782020";
+  const radius=u.type==="warrior"?14:u.type==="commander"?14:12;
+
+  // Drop shadow
+  ctx.fillStyle="rgba(0,0,0,0.4)";
+  ctx.beginPath(); ctx.ellipse(px+2,py+4,radius*0.9,radius*0.45,0,0,Math.PI*2); ctx.fill();
+
+  // Active pulse ring
+  if(isAct && ip){
+    const pr=radius+5+pulse*4;
+    ctx.strokeStyle=`rgba(${ip?"100,180,240":"240,120,120"},${0.2+pulse*0.45})`;
+    ctx.lineWidth=2.5;
+    ctx.beginPath(); ctx.arc(px,py,pr,0,Math.PI*2); ctx.stroke();
+  }
+
+  // Selected ring (gold)
+  if(isSel){
+    ctx.strokeStyle="rgba(255,215,60,0.9)"; ctx.lineWidth=2.5;
+    ctx.beginPath(); ctx.arc(px,py,radius+7,0,Math.PI*2); ctx.stroke();
+    // Inner dashes
+    ctx.strokeStyle="rgba(255,215,60,0.4)"; ctx.lineWidth=1;
+    ctx.setLineDash([4,4]);
+    ctx.beginPath(); ctx.arc(px,py,radius+11,0,Math.PI*2); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // Commander glow
+  if(u.type==="commander"){
+    ctx.shadowColor=ip?"#3a7faf":"#af3a3a"; ctx.shadowBlur=14;
+  }
+
+  // Main body gradient
+  const gr=ctx.createRadialGradient(px-radius*0.3,py-radius*0.3,1,px,py,radius);
+  gr.addColorStop(0,lightC); gr.addColorStop(0.55,mainC); gr.addColorStop(1,darkC);
+  ctx.fillStyle=gr;
+  ctx.beginPath(); ctx.arc(px,py,radius,0,Math.PI*2); ctx.fill();
+
+  ctx.shadowBlur=0;
+  ctx.strokeStyle="rgba(0,0,0,0.55)"; ctx.lineWidth=1.5;
+  ctx.stroke();
+
+  // Type icon
+  drawIcon(u.type,px,py,ip,radius);
+
+  // HP bar
+  const hpPct=u.hp/u.maxHp;
+  ctx.fillStyle="rgba(0,0,0,0.75)"; ctx.fillRect(px-radius,py-radius-7,radius*2,4);
+  ctx.fillStyle=hpPct>0.6?"#6dbf63":hpPct>0.3?"#e8b84b":"#d44444";
+  ctx.fillRect(px-radius,py-radius-7,Math.max(0,radius*2*hpPct),4);
+
+  // Unit type label (small)
+  ctx.fillStyle="rgba(210,200,170,0.7)";
+  ctx.font="bold 7px 'Share Tech Mono',monospace";
+  ctx.textAlign="center"; ctx.textBaseline="middle";
+  // small letter above unit
+}
+
+function drawIcon(type,px,py,ip,r){
+  const ic=ip?"#c8e4ff":"#ffc8c8";
+  ctx.fillStyle=ic; ctx.strokeStyle=ic; ctx.lineWidth=1.4;
+  ctx.save(); ctx.translate(px,py);
+
+  if(type==="commander"){
+    // Crown
+    ctx.beginPath();
+    ctx.moveTo(-6,4); ctx.lineTo(-6,-2); ctx.lineTo(-3,0); ctx.lineTo(0,-6); ctx.lineTo(3,0); ctx.lineTo(6,-2); ctx.lineTo(6,4);
+    ctx.closePath(); ctx.fill();
+    // Gems
+    ctx.fillStyle="rgba(255,240,100,0.9)";
+    ctx.beginPath(); ctx.arc(0,-4,1.5,0,Math.PI*2); ctx.fill();
+  } else if(type==="soldier"){
+    // Shield + cross
+    ctx.beginPath();
+    ctx.moveTo(0,-5); ctx.lineTo(5,-2); ctx.lineTo(4,3); ctx.lineTo(0,6); ctx.lineTo(-4,3); ctx.lineTo(-5,-2);
+    ctx.closePath(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0,-3); ctx.lineTo(0,3); ctx.moveTo(-3,0); ctx.lineTo(3,0); ctx.stroke();
+  } else if(type==="warrior"){
+    // Axe
+    ctx.beginPath(); ctx.moveTo(0,-6); ctx.lineTo(0,6); ctx.stroke();
+    ctx.beginPath(); ctx.arc(3,-1,5,Math.PI*0.7,Math.PI*1.8); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-1,-6); ctx.lineTo(3,-6); ctx.lineTo(2,-3); ctx.closePath(); ctx.fill();
+  } else if(type==="ranger"){
+    // Bow + arrow
+    ctx.save(); ctx.rotate(-0.3);
+    ctx.beginPath(); ctx.arc(2,0,5,Math.PI*0.7,Math.PI*1.3); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-4,-3); ctx.lineTo(-4,3); ctx.stroke(); // string
+    // Arrow
+    ctx.beginPath(); ctx.moveTo(-3,0); ctx.lineTo(6,0); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(4,-2); ctx.lineTo(6,0); ctx.lineTo(4,2); ctx.stroke();
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
+/* Range overlay */
+function drawRanges(unit){
+  if(!unit||state.phase!=="player"||state.actionPoint<=0||state.inputLocked) return;
+  for(let y=0;y<GRID_H;y++) for(let x=0;x<GRID_W;x++){
+    const d=manhattan(unit,{x,y});
+    if(d===0) continue;
+    if(d<=unit.moveRange && canMoveTo(x,y)){
+      ctx.fillStyle="rgba(60,140,220,0.16)";
+      ctx.fillRect(x*TILE+1,y*TILE+1,TILE-2,TILE-2);
+    }
+    if(d<=unit.attackRange){
+      const tu=getAt(x,y);
+      if(tu && tu.owner!==unit.owner){
+        ctx.fillStyle="rgba(220,60,60,0.22)"; ctx.fillRect(x*TILE+2,y*TILE+2,TILE-4,TILE-4);
       }
-      return false;
-    }
-
-    function initMap() {
-      state.map = [];
-      state.units = [];
-      state.selectedUnitId = null;
-      state.selectedTile = null;
-      nextUnitId = 1;
-
-      for (let y = 0; y < GRID_H; y++) {
-        const row = [];
-        for (let x = 0; x < GRID_W; x++) {
-          const t = makeTile(x, y);
-          if (x <= 4) t.owner = PLAYER_ID;
-          else if (x >= GRID_W - 5) t.owner = AI_ID;
-          row.push(t);
-        }
-        state.map.push(row);
-      }
-
-      getTile(2, Math.floor(GRID_H / 2)).building = "barracks";
-      getTile(3, Math.floor(GRID_H / 2) - 2).building = "wall";
-      getTile(GRID_W - 3, Math.floor(GRID_H / 2)).building = "barracks";
-      getTile(GRID_W - 4, Math.floor(GRID_H / 2) + 2).building = "wall";
-
-      spawnUnit(PLAYER_ID, 2, Math.floor(GRID_H / 2));
-      spawnUnit(PLAYER_ID, 2, Math.floor(GRID_H / 2) - 2);
-      spawnUnit(PLAYER_ID, 3, Math.floor(GRID_H / 2) + 2);
-
-      spawnUnit(AI_ID, GRID_W - 3, Math.floor(GRID_H / 2));
-      spawnUnit(AI_ID, GRID_W - 3, Math.floor(GRID_H / 2) - 2);
-      spawnUnit(AI_ID, GRID_W - 4, Math.floor(GRID_H / 2) + 2);
-    }
-
-    function spawnUnit(owner, x, y) {
-      if (getUnitAt(x, y)) return false;
-      state.units.push({
-        id: nextUnitId++,
-        owner,
-        x,
-        y,
-        hp: 3,
-        atk: 2,
-        moveRange: 3,
-        attackRange: 1
-      });
-      return true;
-    }
-
-    function removeDeadUnits() {
-      state.units = state.units.filter(u => u.hp > 0);
-      if (state.selectedUnitId && !getUnitById(state.selectedUnitId)) {
-        state.selectedUnitId = null;
-      }
-    }
-
-    function toggleBanner(text) {
-      ui.turnBanner.textContent = text;
-      ui.turnBanner.classList.remove("show");
-      void ui.turnBanner.offsetWidth;
-      ui.turnBanner.classList.add("show");
-    }
-
-    function startPhase(phase) {
-      state.phase = phase;
-      state.actionPoint = 1;
-      state.inputLocked = false;
-      state.pendingAction = null;
-      state.phaseStartAt = performance.now();
-      state.selectedUnitId = null;
-      state.selectedTile = null;
-
-      if (phase === "player") {
-        ui.aiToast.classList.remove("show");
-        toggleBanner("PLAYER PHASE");
-      } else {
-        toggleBanner("OPPONENT PHASE");
-        state.aiThinkUntil = performance.now() + 1500;
-        ui.aiToast.textContent = "AI is calculating strategy...";
-        ui.aiToast.classList.add("show");
-      }
-      updateUI();
-    }
-
-    function updateUI() {
-      const phaseLabel = state.phase === "player" ? "PLAYER PHASE" : "OPPONENT PHASE";
-      const apLabel = `Action Points: ${state.actionPoint}`;
-      const lockLabel = state.inputLocked ? "Resolution Lock Active" : "Awaiting Command";
-      ui.phaseInfo.innerHTML = `${phaseLabel}<br/>${apLabel}<br/>${lockLabel}`;
-
-      const playerUnits = state.units.filter(u => u.owner === PLAYER_ID).length;
-      const aiUnits = state.units.filter(u => u.owner === AI_ID).length;
-      const playerTiles = countTilesOwned(PLAYER_ID);
-      const aiTiles = countTilesOwned(AI_ID);
-      ui.statusInfo.innerHTML = `Player Units: ${playerUnits}<br/>Opponent Units: ${aiUnits}<br/>Player Tiles: ${playerTiles}<br/>Opponent Tiles: ${aiTiles}<br/>Mode: ${state.eliminationMode ? "Elimination" : "Territory"}`;
-
-      if (state.selectedUnitId) {
-        const u = getUnitById(state.selectedUnitId);
-        if (u) {
-          ui.selectedInfo.innerHTML = `Unit #${u.id} (${ownerName(u.owner)})<br/>HP ${u.hp} | Move ${u.moveRange} | Attack ${u.attackRange}`;
-        }
-      } else if (state.selectedTile) {
-        const t = getTile(state.selectedTile.x, state.selectedTile.y);
-        const owner = t.owner < 0 ? "Neutral" : ownerName(t.owner);
-        ui.selectedInfo.innerHTML = `Tile (${state.selectedTile.x}, ${state.selectedTile.y})<br/>Owner: ${owner}<br/>Building: ${t.building || "None"}`;
-      } else {
-        ui.selectedInfo.textContent = "Select a unit to preview movement/attack radius.";
-      }
-
-      ui.buildMenu.classList.toggle("locked", state.buildLocked);
-      for (const btn of ui.buildButtons) {
-        btn.disabled = state.buildLocked || state.phase !== "player" || state.actionPoint <= 0 || state.inputLocked || state.gameOver;
-      }
-
-      ui.timerHud.textContent = formatTimer(state.elapsedSec);
-    }
-
-    function formatTimer(secondsRaw) {
-      const seconds = Math.floor(secondsRaw);
-      const mm = String(Math.floor(seconds / 60)).padStart(2, "0");
-      const ss = String(seconds % 60).padStart(2, "0");
-      return `${mm}:${ss}`;
-    }
-
-    function countTilesOwned(owner) {
-      let n = 0;
-      for (let y = 0; y < GRID_H; y++) {
-        for (let x = 0; x < GRID_W; x++) {
-          if (getTile(x, y).owner === owner) n++;
-        }
-      }
-      return n;
-    }
-
-    function trySelectOrAct(x, y) {
-      if (state.phase !== "player" || state.actionPoint <= 0 || state.inputLocked || state.gameOver) return;
-      state.selectedTile = { x, y };
-      const clickedUnit = getUnitAt(x, y);
-
-      if (clickedUnit && clickedUnit.owner === PLAYER_ID) {
-        state.selectedUnitId = clickedUnit.id;
-        updateUI();
-        return;
-      }
-
-      const selected = getUnitById(state.selectedUnitId);
-      if (!selected || selected.owner !== PLAYER_ID) return;
-
-      const d = manhattan({ x: selected.x, y: selected.y }, { x, y });
-      const targetUnit = getUnitAt(x, y);
-
-      if (targetUnit && targetUnit.owner !== PLAYER_ID && d <= selected.attackRange) {
-        queueAction({ type: ACTION.ATTACK, actorId: selected.id, targetId: targetUnit.id, targetX: x, targetY: y });
-        return;
-      }
-
-      if (!targetUnit && d > 0 && d <= selected.moveRange) {
-        queueAction({ type: ACTION.MOVE, actorId: selected.id, toX: x, toY: y });
+      const t=getTile(x,y);
+      if(t && t.building && t.owner!==unit.owner){
+        ctx.fillStyle="rgba(220,140,40,0.2)"; ctx.fillRect(x*TILE+2,y*TILE+2,TILE-4,TILE-4);
       }
     }
-
-    function queueAction(action) {
-      if (state.actionPoint <= 0 || state.inputLocked || state.gameOver) return;
-      state.actionPoint = 0;
-      state.inputLocked = true;
-      const now = performance.now();
-      const duration = action.type === ACTION.ATTACK ? 380 : action.type === ACTION.BUILD ? 420 : 360;
-      state.pendingAction = { ...action, start: now, duration };
-      updateUI();
-    }
-
-    function resolvePendingAction() {
-      const action = state.pendingAction;
-      if (!action) return;
-
-      if (action.type === ACTION.MOVE) {
-        const actor = getUnitById(action.actorId);
-        if (actor && !getUnitAt(action.toX, action.toY)) {
-          actor.x = action.toX;
-          actor.y = action.toY;
-          const tile = getTile(action.toX, action.toY);
-          if (tile && tile.owner !== actor.owner) {
-            tile.owner = actor.owner;
-            const c = toCanvasCenter(tile.x, tile.y);
-            addParticles(c.px, c.py, actor.owner === PLAYER_ID ? "#8ed0ff" : "#ffab9f", 10);
-          }
-        }
-      }
-
-      if (action.type === ACTION.ATTACK) {
-        const actor = getUnitById(action.actorId);
-        const defender = getUnitById(action.targetId);
-        if (actor && defender) {
-          let dmg = actor.atk;
-          if (hasDefensiveBuffAt(defender.x, defender.y, defender.owner)) dmg = Math.max(1, dmg - 1);
-          defender.hp -= dmg;
-          const c = toCanvasCenter(defender.x, defender.y);
-          addParticles(c.px, c.py, "#ffd1b3", 14);
-          if (defender.hp <= 0) {
-            addParticles(c.px, c.py, "#ff7f7a", 18);
-            const t = getTile(defender.x, defender.y);
-            if (t) t.owner = actor.owner;
-          }
-        }
-      }
-
-      if (action.type === ACTION.BUILD) {
-        const tile = getTile(action.x, action.y);
-        if (tile && tile.owner === action.owner && !tile.building) {
-          tile.building = action.building;
-          const c = toCanvasCenter(action.x, action.y);
-          addParticles(c.px, c.py, "#d8f3ff", 12);
-        }
-      }
-
-      removeDeadUnits();
-      state.pendingAction = null;
-      state.inputLocked = false;
-
-      if (checkTerritorySweepVictory()) return;
-      if (state.eliminationMode && checkEliminationVictory()) return;
-
-      startPhase(state.phase === "player" ? "ai" : "player");
-    }
-
-    function checkTerritorySweepVictory() {
-      const total = GRID_W * GRID_H;
-      const p = countTilesOwned(PLAYER_ID);
-      const a = countTilesOwned(AI_ID);
-      if (p === total) {
-        endGame("PLAYER VICTORY");
-        return true;
-      }
-      if (a === total) {
-        endGame("OPPONENT VICTORY");
-        return true;
-      }
-      return false;
-    }
-
-    function checkEliminationVictory() {
-      const pUnits = state.units.filter(u => u.owner === PLAYER_ID).length;
-      const aUnits = state.units.filter(u => u.owner === AI_ID).length;
-      if (pUnits > 0 && aUnits > 0) return false;
-      if (pUnits > 0) {
-        endGame("PLAYER VICTORY");
-      } else if (aUnits > 0) {
-        endGame("OPPONENT VICTORY");
-      } else {
-        endGame("DRAW");
-      }
-      return true;
-    }
-
-    function endGame(text) {
-      state.gameOver = true;
-      state.winnerText = text;
-      ui.resultOverlay.textContent = text;
-      ui.resultOverlay.classList.add("show");
-      ui.aiToast.classList.remove("show");
-      updateUI();
-    }
-
-    function buildAtSelected(building) {
-      if (state.phase !== "player" || state.actionPoint <= 0 || state.inputLocked || state.gameOver || state.buildLocked) return;
-      const tilePos = state.selectedTile;
-      if (!tilePos) {
-        logMsg("Select one of your owned tiles to construct.", "bad");
-        return;
-      }
-      const tile = getTile(tilePos.x, tilePos.y);
-      if (!tile || tile.owner !== PLAYER_ID || tile.building) {
-        logMsg("Construction requires an owned, empty tile.", "bad");
-        return;
-      }
-      if (getUnitAt(tilePos.x, tilePos.y)) {
-        logMsg("Construction tile must be unoccupied by a unit.", "bad");
-        return;
-      }
-      queueAction({ type: ACTION.BUILD, x: tilePos.x, y: tilePos.y, owner: PLAYER_ID, building });
-    }
-
-    function allReachableMoveTiles(unit) {
-      const moves = [];
-      for (let y = 0; y < GRID_H; y++) {
-        for (let x = 0; x < GRID_W; x++) {
-          if (x === unit.x && y === unit.y) continue;
-          if (getUnitAt(x, y)) continue;
-          if (Math.abs(unit.x - x) + Math.abs(unit.y - y) <= unit.moveRange) {
-            moves.push({ x, y });
-          }
-        }
-      }
-      return moves;
-    }
-
-    function allAttackTargets(unit) {
-      return state.units.filter(other => other.owner !== unit.owner && Math.abs(other.x - unit.x) + Math.abs(other.y - unit.y) <= unit.attackRange);
-    }
-
-    function chooseAiAction() {
-      const options = [];
-      const aiUnits = state.units.filter(u => u.owner === AI_ID);
-
-      for (const unit of aiUnits) {
-        const attacks = allAttackTargets(unit);
-        for (const target of attacks) {
-          let score = 0;
-          const wouldKill = target.hp <= unit.atk;
-          if (wouldKill) score += 50;
-          options.push({ score, action: { type: ACTION.ATTACK, actorId: unit.id, targetId: target.id, targetX: target.x, targetY: target.y } });
-        }
-
-        const currentlyThreatened = tileInAttackRangeOfOwner(unit.x, unit.y, PLAYER_ID);
-        const moves = allReachableMoveTiles(unit);
-        for (const move of moves) {
-          let score = 0;
-          const tile = getTile(move.x, move.y);
-          if (tile && tile.owner !== AI_ID) score += 30;
-
-          const afterThreat = tileInAttackRangeOfOwner(move.x, move.y, PLAYER_ID);
-          const entersBuff = hasDefensiveBuffAt(move.x, move.y, AI_ID);
-          if ((currentlyThreatened && !afterThreat) || entersBuff) score += 40;
-
-          options.push({ score, action: { type: ACTION.MOVE, actorId: unit.id, toX: move.x, toY: move.y } });
-        }
-      }
-
-      if (!state.buildLocked) {
-        for (let y = 0; y < GRID_H; y++) {
-          for (let x = 0; x < GRID_W; x++) {
-            const t = getTile(x, y);
-            if (!t || t.owner !== AI_ID || t.building || getUnitAt(x, y)) continue;
-            const nearEnemy = neighbors4(x, y).some(n => getTile(n.x, n.y).owner === PLAYER_ID);
-            const score = nearEnemy ? 40 : 10;
-            options.push({ score, action: { type: ACTION.BUILD, x, y, owner: AI_ID, building: nearEnemy ? "wall" : "barracks" } });
-          }
-        }
-      }
-
-      if (!options.length) {
-        return { type: ACTION.PASS };
-      }
-
-      options.sort((a, b) => b.score - a.score);
-      return options[0].action;
-    }
-
-    function processAiTurn(now) {
-      if (state.phase !== "ai" || state.gameOver) return;
-      if (state.pendingAction) return;
-      if (now < state.aiThinkUntil) return;
-
-      ui.aiToast.classList.remove("show");
-      const action = chooseAiAction();
-      if (action.type === ACTION.PASS) {
-        logMsg("Opponent passes (no legal move).", "muted");
-        state.actionPoint = 0;
-        startPhase("player");
-        return;
-      }
-      queueAction(action);
-    }
-
-    function playShatterSound() {
-      try {
-        const ac = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = ac.createOscillator();
-        const gain = ac.createGain();
-        osc.type = "triangle";
-        osc.frequency.setValueAtTime(62, ac.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(30, ac.currentTime + 0.5);
-        gain.gain.setValueAtTime(0.0001, ac.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.45, ac.currentTime + 0.04);
-        gain.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + 0.5);
-        osc.connect(gain);
-        gain.connect(ac.destination);
-        osc.start();
-        osc.stop(ac.currentTime + 0.5);
-      } catch (_) {
-        // Audio is optional; gameplay state still transitions.
-      }
-    }
-
-    function triggerShatter() {
-      state.shatterTriggered = true;
-      state.eliminationMode = true;
-      state.buildLocked = true;
-      state.shakeUntil = performance.now() + 500;
-      playShatterSound();
-
-      for (let y = 0; y < GRID_H; y++) {
-        for (let x = 0; x < GRID_W; x++) {
-          const tile = getTile(x, y);
-          if (!tile || !tile.building) continue;
-          if (tile.building === "wall" || tile.building === "barracks") {
-            tile.building = null;
-            const c = toCanvasCenter(x, y);
-            addParticles(c.px, c.py, "#e6ddcc", 20);
-          }
-        }
-      }
-
-      logMsg("SHATTER PROTOCOL: Walls and Barracks destroyed. Elimination Mode active.", "bad");
-      updateUI();
-    }
-
-    function updateTimer(now) {
-      if (state.gameOver) return;
-      state.elapsedSec = (now - state.gameStartedAt) / 1000;
-      if (!state.shatterTriggered && state.elapsedSec >= 120) {
-        triggerShatter();
-      }
-      ui.timerHud.textContent = formatTimer(state.elapsedSec);
-    }
-
-    function drawMap() {
-      for (let y = 0; y < GRID_H; y++) {
-        for (let x = 0; x < GRID_W; x++) {
-          const t = getTile(x, y);
-          if (!t) continue;
-          const px = x * TILE;
-          const py = y * TILE;
-
-          ctx.fillStyle = "#364345";
-          ctx.fillRect(px, py, TILE, TILE);
-
-          if (t.owner === PLAYER_ID) {
-            ctx.fillStyle = "rgba(66, 160, 224, 0.36)";
-            ctx.fillRect(px, py, TILE, TILE);
-          }
-          if (t.owner === AI_ID) {
-            ctx.fillStyle = "rgba(224, 97, 82, 0.35)";
-            ctx.fillRect(px, py, TILE, TILE);
-          }
-
-          if (t.building === "wall") {
-            ctx.fillStyle = "#a9b7be";
-            ctx.fillRect(px + 6, py + 10, TILE - 12, TILE - 16);
-          }
-          if (t.building === "barracks") {
-            ctx.fillStyle = "#a8c8d6";
-            ctx.fillRect(px + 7, py + 8, TILE - 14, TILE - 16);
-            ctx.fillStyle = "#5c7684";
-            ctx.fillRect(px + 7, py + 6, TILE - 14, 5);
-          }
-
-          ctx.strokeStyle = "rgba(0, 0, 0, 0.32)";
-          ctx.strokeRect(px, py, TILE, TILE);
-        }
-      }
-    }
-
-    function drawRangeGhost(unit) {
-      if (!unit || state.phase !== "player" || state.actionPoint <= 0 || state.inputLocked) return;
-      for (let y = 0; y < GRID_H; y++) {
-        for (let x = 0; x < GRID_W; x++) {
-          const d = Math.abs(unit.x - x) + Math.abs(unit.y - y);
-          if (d === 0) continue;
-
-          if (d <= unit.moveRange && !getUnitAt(x, y)) {
-            ctx.fillStyle = "rgba(110, 194, 246, 0.22)";
-            ctx.fillRect(x * TILE + 2, y * TILE + 2, TILE - 4, TILE - 4);
-          }
-          if (d <= unit.attackRange) {
-            const target = getUnitAt(x, y);
-            if (target && target.owner !== unit.owner) {
-              ctx.fillStyle = "rgba(255, 118, 118, 0.28)";
-              ctx.fillRect(x * TILE + 3, y * TILE + 3, TILE - 6, TILE - 6);
-            }
-          }
-        }
-      }
-    }
-
-    function drawUnits(now) {
-      const pulse = (Math.sin(now / 280) + 1) / 2;
-      const active = activeOwner();
-      const shouldPulse = state.actionPoint > 0 && !state.inputLocked;
-
-      for (const u of state.units) {
-        const px = u.x * TILE + TILE / 2;
-        const py = u.y * TILE + TILE / 2;
-
-        ctx.fillStyle = u.owner === PLAYER_ID ? "#89d5ff" : "#ff988a";
-        ctx.beginPath();
-        ctx.arc(px, py, 12, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = "#132126";
-        ctx.lineWidth = 2;
-        ctx.stroke();
-
-        if (shouldPulse && u.owner === active) {
-          ctx.strokeStyle = `rgba(255, 255, 255, ${0.34 + pulse * 0.62})`;
-          ctx.lineWidth = 3;
-          ctx.beginPath();
-          ctx.arc(px, py, 16 + pulse * 2, 0, Math.PI * 2);
-          ctx.stroke();
-        }
-
-        if (u.id === state.selectedUnitId) {
-          ctx.strokeStyle = "#fff8b6";
-          ctx.lineWidth = 2;
-          ctx.beginPath();
-          ctx.arc(px, py, 19, 0, Math.PI * 2);
-          ctx.stroke();
-        }
-
-        ctx.fillStyle = "#111";
-        ctx.fillRect(px - 12, py - 20, 24, 4);
-        ctx.fillStyle = u.hp === 3 ? "#8ef1a4" : u.hp === 2 ? "#ffe690" : "#ff8f8f";
-        ctx.fillRect(px - 12, py - 20, Math.max(0, (u.hp / 3) * 24), 4);
-      }
-    }
-
-    function drawPendingAction() {
-      const action = state.pendingAction;
-      if (!action) return;
-
-      if (action.type === ACTION.ATTACK) {
-        const actor = getUnitById(action.actorId);
-        if (!actor) return;
-        ctx.strokeStyle = "rgba(255, 223, 166, 0.9)";
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.moveTo(actor.x * TILE + TILE / 2, actor.y * TILE + TILE / 2);
-        ctx.lineTo(action.targetX * TILE + TILE / 2, action.targetY * TILE + TILE / 2);
-        ctx.stroke();
-      }
-
-      if (action.type === ACTION.BUILD) {
-        ctx.strokeStyle = "rgba(210, 240, 255, 0.9)";
-        ctx.lineWidth = 3;
-        ctx.strokeRect(action.x * TILE + 4, action.y * TILE + 4, TILE - 8, TILE - 8);
-      }
-    }
-
-    function drawParticles(dt) {
-      for (const p of state.particles) {
-        p.x += p.vx * dt;
-        p.y += p.vy * dt;
-        p.vy += 160 * dt;
-        p.life -= dt;
-      }
-      state.particles = state.particles.filter(p => p.life > 0);
-
-      for (const p of state.particles) {
-        const a = Math.max(0, p.life / p.maxLife);
-        ctx.fillStyle = p.color.startsWith("#")
-          ? `${p.color}${Math.floor(a * 255).toString(16).padStart(2, "0")}`
-          : p.color;
-        ctx.fillRect(p.x, p.y, p.size, p.size);
-      }
-    }
-
-    function drawHover() {
-      if (!state.hoverTile) return;
-      const { x, y } = state.hoverTile;
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
-      ctx.strokeRect(x * TILE + 3, y * TILE + 3, TILE - 6, TILE - 6);
-    }
-
-    function drawSelectedTile() {
-      if (!state.selectedTile) return;
-      const { x, y } = state.selectedTile;
-      ctx.strokeStyle = "rgba(255, 246, 176, 0.95)";
-      ctx.lineWidth = 2;
-      ctx.strokeRect(x * TILE + 2, y * TILE + 2, TILE - 4, TILE - 4);
-      ctx.lineWidth = 1;
-    }
-
-    function render(now, dt) {
-      const shakeMag = now < state.shakeUntil ? 11 : 0;
-      const ox = shakeMag ? (Math.random() * 2 - 1) * shakeMag : 0;
-      const oy = shakeMag ? (Math.random() * 2 - 1) * shakeMag : 0;
-
-      ctx.save();
-      ctx.translate(ox, oy);
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      drawMap();
-      drawHover();
-      drawSelectedTile();
-      const selected = getUnitById(state.selectedUnitId);
-      drawRangeGhost(selected);
-      drawUnits(now);
-      drawPendingAction();
-      drawParticles(dt);
-      ctx.restore();
-    }
-
-    function updateLoop(now) {
-      if (!state.lastFrame) state.lastFrame = now;
-      const dt = Math.min(0.05, (now - state.lastFrame) / 1000);
-      state.lastFrame = now;
-
-      if (!state.gameOver && !ui.homeOverlay.hidden) {
-        render(now, dt);
-        requestAnimationFrame(updateLoop);
-        return;
-      }
-
-      if (!state.gameOver) {
-        updateTimer(now);
-
-        if (state.pendingAction && now >= state.pendingAction.start + state.pendingAction.duration) {
-          resolvePendingAction();
-        }
-
-        processAiTurn(now);
-      }
-
-      render(now, dt);
-      requestAnimationFrame(updateLoop);
-    }
-
-    function resetMatch() {
-      state.phase = "player";
-      state.actionPoint = 1;
-      state.inputLocked = false;
-      state.pendingAction = null;
-      state.aiThinkUntil = 0;
-      state.elapsedSec = 0;
-      state.gameStartedAt = performance.now();
-      state.shatterTriggered = false;
-      state.eliminationMode = false;
-      state.buildLocked = false;
-      state.shakeUntil = 0;
-      state.particles = [];
-      state.gameOver = false;
-      state.winnerText = "";
-      ui.resultOverlay.classList.remove("show");
-      ui.log.innerHTML = "";
-      initMap();
-      toggleBanner("PLAYER PHASE");
-      updateUI();
-      logMsg("Match start. Economy of One active: exactly one action per phase.", "good");
-    }
-
-    function startGame() {
-      if (ui.homeOverlay.hidden || ui.homeOverlay.classList.contains("closing")) return;
-      ui.homeOverlay.classList.add("closing");
-      window.setTimeout(() => {
-        ui.homeOverlay.hidden = true;
-        ui.homeOverlay.classList.remove("closing");
-      }, 240);
-      resetMatch();
-      startPhase("player");
-    }
-
-    canvas.addEventListener("mousemove", (e) => {
-      const rect = canvas.getBoundingClientRect();
-      const x = Math.floor((e.clientX - rect.left) * (canvas.width / rect.width) / TILE);
-      const y = Math.floor((e.clientY - rect.top) * (canvas.height / rect.height) / TILE);
-      if (x < 0 || y < 0 || x >= GRID_W || y >= GRID_H) {
-        state.hoverTile = null;
-      } else {
-        state.hoverTile = { x, y };
-      }
-    });
-
-    canvas.addEventListener("click", (e) => {
-      if (!ui.homeOverlay.hidden || state.gameOver) return;
-      const rect = canvas.getBoundingClientRect();
-      const x = Math.floor((e.clientX - rect.left) * (canvas.width / rect.width) / TILE);
-      const y = Math.floor((e.clientY - rect.top) * (canvas.height / rect.height) / TILE);
-      if (x < 0 || y < 0 || x >= GRID_W || y >= GRID_H) return;
-      trySelectOrAct(x, y);
-      updateUI();
-    });
-
-    document.addEventListener("keydown", (e) => {
-      if (e.key.toLowerCase() === "b") {
-        buildAtSelected("barracks");
-      }
-      if (e.key.toLowerCase() === "v") {
-        buildAtSelected("wall");
-      }
-    });
-
-    for (const btn of ui.buildButtons) {
-      btn.addEventListener("click", () => buildAtSelected(btn.dataset.build));
-    }
-
-    ui.playBtn.addEventListener("click", (e) => {
-      e.preventDefault();
-      startGame();
-    });
-
-    window.startGame = startGame;
-    initMap();
-    updateUI();
-
-    requestAnimationFrame(updateLoop);
-  </script>
+  }
+}
+
+/* Hover/select overlay */
+function drawOverlays(){
+  if(state.hoverTile){
+    const {x,y}=state.hoverTile;
+    ctx.strokeStyle="rgba(255,255,255,0.25)"; ctx.lineWidth=1;
+    ctx.strokeRect(x*TILE+1.5,y*TILE+1.5,TILE-3,TILE-3);
+  }
+  if(state.selectedTile){
+    const {x,y}=state.selectedTile;
+    ctx.strokeStyle="rgba(255,215,60,0.65)"; ctx.lineWidth=2;
+    ctx.strokeRect(x*TILE+2,y*TILE+2,TILE-4,TILE-4); ctx.lineWidth=1;
+  }
+}
+
+/* Pending action line */
+function drawPending(){
+  const a=state.pendingAction; if(!a) return;
+  if(a.type===ACTION.ATTACK||a.type===ACTION.ATTACK_BLDG){
+    const act=getById(a.actorId); if(!act) return;
+    ctx.strokeStyle="rgba(255,200,70,0.8)"; ctx.lineWidth=3;
+    ctx.setLineDash([7,4]);
+    ctx.beginPath();
+    ctx.moveTo(act.x*TILE+TILE/2,act.y*TILE+TILE/2);
+    ctx.lineTo(a.targetX*TILE+TILE/2,a.targetY*TILE+TILE/2);
+    ctx.stroke(); ctx.setLineDash([]);
+  }
+}
+
+/* Particles */
+function drawParticles(dt){
+  for(const p of state.particles){
+    p.x+=p.vx*dt; p.y+=p.vy*dt; p.vy+=140*dt; p.life-=dt;
+  }
+  state.particles=state.particles.filter(p=>p.life>0);
+  for(const p of state.particles){
+    ctx.globalAlpha=Math.max(0,p.life/p.maxLife);
+    ctx.fillStyle=p.color;
+    ctx.fillRect(p.x,p.y,p.sz,p.sz);
+  }
+  ctx.globalAlpha=1;
+}
+
+/* Main render */
+function render(now,dt){
+  const shk=now<state.shakeUntil?9:0;
+  const ox=shk?(Math.random()*2-1)*shk:0;
+  const oy=shk?(Math.random()*2-1)*shk:0;
+  const pulse=(Math.sin(now/380)+1)/2;
+
+  ctx.save(); ctx.translate(ox,oy);
+  ctx.clearRect(-20,-20,canvas.width+40,canvas.height+40);
+
+  drawMap();
+  drawFlashTiles();
+  drawOverlays();
+
+  // Draw buildings
+  for(let y=0;y<GRID_H;y++) for(let x=0;x<GRID_W;x++){
+    const t=getTile(x,y);
+    if(t.building) drawBuilding(t);
+  }
+
+  const sel=getById(state.selectedUnitId);
+  drawRanges(sel);
+  drawPending();
+
+  // Units back-to-front
+  for(const u of state.units) drawUnit(u,pulse);
+
+  drawParticles(dt);
+  ctx.restore();
+}
+
+/* ═══════════════════════════════ UI UPDATE ══════════════════════════════ */
+function updateUI(){
+  const ip=state.phase==="player";
+  const canAct=ip&&state.actionPoint>0&&!state.inputLocked&&!state.gameOver;
+  const gold=state.gold[PLAYER_ID];
+  const inc=computeIncome(PLAYER_ID);
+
+  ui.goldAmt.textContent=gold;
+  ui.goldInc.textContent=`+${inc}/turn`;
+
+  // Phase
+  const ap=state.actionPoint>0?"1 action ready":"waiting...";
+  ui.phaseInfo.innerHTML=`<span style="color:${ip?"#6ab0de":"#de6a6a"}">${ip?"PLAYER":"OPPONENT"}</span> · ${ap}`;
+
+  // Selection
+  const sel=getById(state.selectedUnitId);
+  const st=state.selectedTile?getTile(state.selectedTile.x,state.selectedTile.y):null;
+  if(sel){
+    const hc=sel.hp>sel.maxHp*0.5?"#6dbf63":"#d44444";
+    ui.selectedInfo.innerHTML=`<span style="color:#d4c9a0;font-weight:bold;">${sel.label}</span> (${ownerName(sel.owner)})<br>HP: <span style="color:${hc}">${sel.hp}/${sel.maxHp}</span> · ATK:${sel.atk} · MOV:${sel.moveRange} · RNG:${sel.attackRange}`;
+  } else if(st){
+    const own=st.owner===PLAYER_ID?"yours":st.owner===AI_ID?"enemy":"neutral";
+    const bld=st.building?`${st.building} (HP:${st.bldgHp})`:"empty";
+    ui.selectedInfo.innerHTML=`Tile [${state.selectedTile.x},${state.selectedTile.y}]<br>${own} · ${bld}`;
+  } else {
+    ui.selectedInfo.innerHTML=`<span style="color:var(--muted)">Click a unit or tile.</span>`;
+  }
+
+  // Build buttons
+  const canBuild=canAct&&!state.buildLocked&&state.selectedTile&&canBuildAt(state.selectedTile);
+  for(const b of ui.buildBtns) b.disabled=!canBuild;
+
+  // Recruit
+  const brs=barracksOf(PLAYER_ID);
+  ui.recruitStatus.textContent=brs.length?`${brs.length} barracks · spawns adjacent`:"Build a Barracks first.";
+  for(const b of ui.recruitBtns){
+    const cost=UNIT_DEFS[b.dataset.recruit]?.cost||0;
+    b.disabled=!canAct||!brs.length||gold<cost;
+  }
+
+  // Status
+  const pt=countOwned(PLAYER_ID), at=countOwned(AI_ID);
+  const pu=state.units.filter(u=>u.owner===PLAYER_ID).length;
+  const au=state.units.filter(u=>u.owner===AI_ID).length;
+  ui.statusInfo.innerHTML=`<span style="color:#6ab0de">▣${pt}</span> / <span style="color:#de6a6a">${at}▣</span> tiles · <span style="color:#6ab0de">⊕${pu}</span> / <span style="color:#de6a6a">${au}⊕</span> units<br><span style="font-size:9px;color:var(--muted)">${state.eliminationMode?"⚡ ELIMINATION MODE":state.shatterTriggered?"SHATTER ACTIVE":`Shatter at 2:00`}</span>`;
+}
+
+function canBuildAt(pos){
+  if(!pos) return false;
+  const t=getTile(pos.x,pos.y);
+  return t&&t.owner===PLAYER_ID&&!t.building&&!getAt(pos.x,pos.y);
+}
+
+/* ═══════════════════════════════ LOOP ═══════════════════════════════════ */
+function updateTimer(now){
+  if(state.gameOver) return;
+  state.elapsedSec=(now-state.gameStartedAt)/1000;
+  if(!state.shatterTriggered&&state.elapsedSec>=120) triggerShatter();
+  const s=Math.floor(state.elapsedSec%60), m=Math.floor(state.elapsedSec/60);
+  ui.timerHud.textContent=`${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+  ui.timerHud.classList.toggle("danger", !state.shatterTriggered&&state.elapsedSec>=100);
+}
+
+function loop(now){
+  if(!state.lastFrame) state.lastFrame=now;
+  const dt=Math.min(0.05,(now-state.lastFrame)/1000);
+  state.lastFrame=now;
+
+  if(!state.gameOver&&!ui.homeOverlay.hidden){
+    render(now,dt); requestAnimationFrame(loop); return;
+  }
+
+  if(!state.gameOver){
+    updateTimer(now);
+    if(state.pendingAction&&now>=state.pendingAction.start+state.pendingAction.duration) resolvePending();
+    processAi(now);
+  }
+
+  render(now,dt);
+  requestAnimationFrame(loop);
+}
+
+/* ═══════════════════════════════ RESET / START ══════════════════════════ */
+function resetMatch(){
+  Object.assign(state,{
+    map:[],units:[],gold:[10,10],income:[0,0],
+    phase:"player",actionPoint:1,inputLocked:false,pendingAction:null,
+    selectedUnitId:null,selectedTile:null,hoverTile:null,
+    aiThinkUntil:0,aiTurnCount:0,
+    elapsedSec:0,gameStartedAt:performance.now(),lastFrame:0,
+    shatterTriggered:false,eliminationMode:false,buildLocked:false,
+    shakeUntil:0,particles:[],flashTiles:[],gameOver:false,winnerText:""
+  });
+  nextUnitId=1;
+  ui.resultOverlay.classList.remove("show");
+  ui.log.innerHTML="";
+  ui.timerHud.classList.remove("danger");
+  initMap();
+  banner("── PLAYER PHASE ──","#6ab0de","rgba(74,143,191,0.42)");
+  updateUI();
+  logMsg("Operation deployed. Protect your Commander.","lg");
+  logMsg("Build Barracks → earn gold → recruit units to survive.","lm");
+  logMsg("Walls block enemy movement. Attack them to destroy.","lm");
+}
+
+function startGame(){
+  if(ui.homeOverlay.hidden||ui.homeOverlay.classList.contains("closing")) return;
+  ui.homeOverlay.classList.add("closing");
+  setTimeout(()=>{ui.homeOverlay.hidden=true; ui.homeOverlay.classList.remove("closing");},280);
+  resetMatch();
+  startPhase("player");
+}
+
+/* ═══════════════════════════════ INPUT ══════════════════════════════════ */
+canvas.addEventListener("mousemove",e=>{
+  const r=canvas.getBoundingClientRect();
+  const x=Math.floor((e.clientX-r.left)*(canvas.width/r.width)/TILE);
+  const y=Math.floor((e.clientY-r.top)*(canvas.height/r.height)/TILE);
+  state.hoverTile=(x>=0&&y>=0&&x<GRID_W&&y<GRID_H)?{x,y}:null;
+});
+canvas.addEventListener("mouseleave",()=>{state.hoverTile=null;});
+canvas.addEventListener("click",e=>{
+  if(!ui.homeOverlay.hidden||state.gameOver) return;
+  const r=canvas.getBoundingClientRect();
+  const x=Math.floor((e.clientX-r.left)*(canvas.width/r.width)/TILE);
+  const y=Math.floor((e.clientY-r.top)*(canvas.height/r.height)/TILE);
+  if(x<0||y<0||x>=GRID_W||y>=GRID_H) return;
+  trySelectOrAct(x,y); updateUI();
+});
+document.addEventListener("keydown",e=>{
+  const k=e.key.toLowerCase();
+  if(k==="b") buildAtSelected("barracks");
+  if(k==="v") buildAtSelected("wall");
+  if(k==="1") recruitUnit("soldier");
+  if(k==="2") recruitUnit("warrior");
+  if(k==="3") recruitUnit("ranger");
+});
+for(const b of ui.buildBtns) b.addEventListener("click",()=>buildAtSelected(b.dataset.build));
+for(const b of ui.recruitBtns) b.addEventListener("click",()=>recruitUnit(b.dataset.recruit));
+ui.playBtn.addEventListener("click",e=>{e.preventDefault();startGame();});
+window.startGame=startGame;
+window.resetMatch=resetMatch;
+
+initMap(); updateUI(); requestAnimationFrame(loop);
+</script>
 </body>
 </html>
