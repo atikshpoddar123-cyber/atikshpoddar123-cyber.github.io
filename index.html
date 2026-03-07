@@ -158,25 +158,30 @@
   <div id="homePanel">
     <div class="homeLeft">
       <div class="mainTitle">PROJECT RESOLUTE</div>
-      <div class="mainSub">V2.0 · COMMAND THEATRE</div>
-      <div class="feat"><div class="featIco">⚔</div><div class="featTxt"><strong>Commander Units</strong> — yours dies, you lose. Protect or avenge.</div></div>
+      <div class="mainSub">V2.1 · COMMAND THEATRE</div>
+      <div class="feat"><div class="featIco">⚔</div><div class="featTxt"><strong>Commander Units</strong> — yours dies, you lose. Kill theirs to win.</div></div>
       <div class="feat"><div class="featIco">⌂</div><div class="featTxt"><strong>Barracks Recruitment</strong> — spend gold each turn to field Soldiers, Warriors &amp; Rangers.</div></div>
       <div class="feat"><div class="featIco">◈</div><div class="featTxt"><strong>Gold Economy</strong> — own tiles and barracks to earn income. Outbuild your opponent.</div></div>
       <div class="feat"><div class="featIco">█</div><div class="featTxt"><strong>Walls with HP</strong> — block enemy movement. Must be destroyed tile by tile.</div></div>
       <div class="feat"><div class="featIco">⏱</div><div class="featTxt"><strong>Shatter at 2:00</strong> — all structures destroyed. Elimination mode begins.</div></div>
-      <button id="playBtn" onclick="startGame()">▶ DEPLOY OPERATION</button>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px;">
+        <button id="playBtn" type="button" onclick="startGame(false)">▶ VS AI</button>
+        <button id="play2Btn" type="button" onclick="startGame(true)" style="font-family:'Cinzel',serif;font-size:13px;font-weight:800;letter-spacing:2.5px;padding:11px;border-color:rgba(200,168,75,0.55);background:linear-gradient(180deg,rgba(44,34,54,0.92),rgba(22,16,32,0.96));color:#c88be8;text-align:center;">⚔ 2 PLAYER</button>
+      </div>
+      <div style="margin-top:10px;font-size:9px;color:var(--muted);letter-spacing:1px;">2-Player: Hotseat — Player 1 (blue/left) vs Player 2 (red/right). Take turns on the same screen.</div>
     </div>
     <div class="homeRight">
-      <div class="patchTitle">UNIT ROSTER</div>
-      <div class="pi"><strong>Commander</strong> — HP:6 ATK:2 MOV:2. Game ends if killed.</div>
-      <div class="pi"><strong>Soldier ◈5</strong> — HP:3 ATK:1 MOV:2 RNG:1. Reliable backbone.</div>
-      <div class="pi"><strong>Warrior ◈8</strong> — HP:5 ATK:2 MOV:1 RNG:1. Tanky frontline.</div>
-      <div class="pi"><strong>Ranger ◈6</strong> — HP:2 ATK:1 MOV:2 RNG:3. Long-range sniper.</div>
-      <div class="patchTitle" style="margin-top:14px;">HOT KEYS</div>
-      <div class="pi">B — Build Barracks on selected tile</div>
-      <div class="pi">V — Build Wall on selected tile</div>
-      <div class="pi">1/2/3 — Recruit Soldier/Warrior/Ranger</div>
-      <div class="pi">Barracks give +3 gold/turn income</div>
+      <div class="patchTitle">PATCH NOTES</div>
+      <div class="pi" style="color:var(--warn);"><strong>v2.1</strong> — Current build</div>
+      <div class="pi">Victory now triggers on <strong>ALL enemy units dead</strong>, not just Commander. Stragglers no longer survive a win.</div>
+      <div class="pi"><strong>2-Player Hotseat</strong> mode added. Both players share one screen, taking turns.</div>
+      <div class="pi">End-of-game screen now shows the <strong>reason for victory</strong> (annihilation, commander kill, etc).</div>
+      <div class="pi">UI now shows <strong>both players' gold</strong> in the status panel during play.</div>
+      <div style="margin-top:10px;" class="patchTitle">v2.0 NOTES</div>
+      <div class="pi"><strong>Barracks</strong> recruit Soldiers, Warriors &amp; Rangers using gold.</div>
+      <div class="pi"><strong>Walls</strong> block all movement, have 4 HP, show crack damage.</div>
+      <div class="pi"><strong>Commander</strong> unit: death = instant loss.</div>
+      <div class="pi"><strong>Gold economy</strong>: tiles + barracks generate income per turn.</div>
     </div>
   </div>
 </div>
@@ -298,6 +303,7 @@ const state = {
   shatterTriggered:false, eliminationMode:false, buildLocked:false,
   shakeUntil:0, particles:[], flashTiles:[],
   gameOver:false, winnerText:"",
+  twoPlayer:false,
 };
 let nextUnitId = 1;
 
@@ -307,7 +313,10 @@ const getById    = id   => state.units.find(u=>u.id===id) ?? null;
 const getAt      = (x,y)=> state.units.find(u=>u.x===x&&u.y===y) ?? null;
 const activeOwn  = ()   => state.phase==="player" ? PLAYER_ID : AI_ID;
 const enemy      = id   => id===PLAYER_ID ? AI_ID : PLAYER_ID;
-const ownerName  = id   => id===PLAYER_ID ? "Player" : "Opponent";
+const ownerName  = id   => {
+  if(state.twoPlayer) return id===PLAYER_ID?"Player 1":"Player 2";
+  return id===PLAYER_ID?"Player":"Opponent";
+};
 const manhattan  = (a,b)=> Math.abs(a.x-b.x)+Math.abs(a.y-b.y);
 
 function nbrs4(x,y){
@@ -427,12 +436,18 @@ function startPhase(phase){
   if(phase==="player"){
     grantIncome(PLAYER_ID);
     ui.aiToast.classList.remove("show");
-    banner("── PLAYER PHASE ──", "#6ab0de", "rgba(74,143,191,0.42)");
+    const label=state.twoPlayer?"── PLAYER 1 PHASE ──":"── PLAYER PHASE ──";
+    banner(label,"#6ab0de","rgba(74,143,191,0.42)");
   } else {
     grantIncome(AI_ID);
-    banner("── OPPONENT PHASE ──", "#de6a6a", "rgba(191,74,74,0.42)");
-    ui.aiToast.classList.add("show");
-    state.aiThinkUntil = performance.now() + 400 + Math.random()*600;
+    if(state.twoPlayer){
+      ui.aiToast.classList.remove("show");
+      banner("── PLAYER 2 PHASE ──","#de8f3a","rgba(191,120,50,0.42)");
+    } else {
+      banner("── OPPONENT PHASE ──","#de6a6a","rgba(191,74,74,0.42)");
+      ui.aiToast.classList.add("show");
+      state.aiThinkUntil = performance.now() + 400 + Math.random()*600;
+    }
     state.aiTurnCount++;
   }
   updateUI();
@@ -446,12 +461,15 @@ function banner(text, col, border){
 
 /* ═══════════════════════════════ SELECTION ══════════════════════════════ */
 function trySelectOrAct(x,y){
-  if(state.phase!=="player"||state.inputLocked||state.gameOver) return;
+  if(state.inputLocked||state.gameOver) return;
+  // In 2P mode, player2 controls AI units on "ai" phase; in 1P mode only "player" phase is interactive
+  if(!state.twoPlayer && state.phase!=="player") return;
+  const curOwner=activeOwn();
   const clickUnit=getAt(x,y);
   const tile=getTile(x,y);
 
   // Select own unit
-  if(clickUnit && clickUnit.owner===PLAYER_ID){
+  if(clickUnit && clickUnit.owner===curOwner){
     state.selectedUnitId=clickUnit.id;
     state.selectedTile={x,y};
     return;
@@ -459,17 +477,18 @@ function trySelectOrAct(x,y){
 
   const sel=getById(state.selectedUnitId);
 
-  if(sel){
+  if(sel && sel.owner===curOwner){
     const d=manhattan(sel,{x,y});
+    const foeId=enemy(curOwner);
 
     // Attack enemy unit
-    if(clickUnit && clickUnit.owner===AI_ID && d<=sel.attackRange){
+    if(clickUnit && clickUnit.owner===foeId && d<=sel.attackRange){
       if(state.actionPoint>0) queueAction({type:ACTION.ATTACK,actorId:sel.id,targetId:clickUnit.id,targetX:x,targetY:y});
       return;
     }
 
     // Attack enemy building
-    if(!clickUnit && tile && tile.building && tile.owner===AI_ID && d<=sel.attackRange){
+    if(!clickUnit && tile && tile.building && tile.owner===foeId && d<=sel.attackRange){
       if(state.actionPoint>0) queueAction({type:ACTION.ATTACK_BLDG,actorId:sel.id,targetX:x,targetY:y});
       return;
     }
@@ -488,33 +507,35 @@ function trySelectOrAct(x,y){
 
 /* ═══════════════════════════════ BUILD & RECRUIT ════════════════════════ */
 function buildAtSelected(building){
-  if(state.phase!=="player"||state.actionPoint<=0||state.inputLocked||state.gameOver||state.buildLocked) return;
+  const curOwner=activeOwn();
+  if((!state.twoPlayer&&state.phase!=="player")||state.actionPoint<=0||state.inputLocked||state.gameOver||state.buildLocked) return;
   const pos=state.selectedTile;
   if(!pos){logMsg("Select an owned tile first.", "lb"); return;}
   const t=getTile(pos.x,pos.y);
-  if(!t||t.owner!==PLAYER_ID||t.building){logMsg("Need an owned, empty tile.", "lb"); return;}
+  if(!t||t.owner!==curOwner||t.building){logMsg("Need an owned, empty tile.", "lb"); return;}
   if(getAt(pos.x,pos.y)){logMsg("Tile is occupied.", "lb"); return;}
-  queueAction({type:ACTION.BUILD,x:pos.x,y:pos.y,owner:PLAYER_ID,building});
+  queueAction({type:ACTION.BUILD,x:pos.x,y:pos.y,owner:curOwner,building});
 }
 
 function recruitUnit(type){
-  if(state.phase!=="player"||state.actionPoint<=0||state.inputLocked||state.gameOver) return;
+  const curOwner=activeOwn();
+  if((!state.twoPlayer&&state.phase!=="player")||state.actionPoint<=0||state.inputLocked||state.gameOver) return;
   const def=UNIT_DEFS[type];
   if(!def){return;}
-  if(state.gold[PLAYER_ID]<def.cost){logMsg(`Need ${def.cost} gold. Have ${state.gold[PLAYER_ID]}.`,"lb"); return;}
-  const brs=barracksOf(PLAYER_ID);
+  if(state.gold[curOwner]<def.cost){logMsg(`Need ${def.cost} gold. Have ${state.gold[curOwner]}.`,"lb"); return;}
+  const brs=barracksOf(curOwner);
   if(!brs.length){logMsg("No Barracks owned.","lb"); return;}
 
   let spawn=null;
   for(const b of brs){
     for(const n of nbrs4(b.x,b.y)){
       const nt=getTile(n.x,n.y);
-      if(nt && nt.owner===PLAYER_ID && !getAt(n.x,n.y) && nt.building!=="wall"){spawn=n; break;}
+      if(nt && nt.owner===curOwner && !getAt(n.x,n.y) && nt.building!=="wall"){spawn=n; break;}
     }
     if(spawn) break;
   }
   if(!spawn){logMsg("No spawn tile available near Barracks.","lb"); return;}
-  queueAction({type:ACTION.RECRUIT,unitType:type,spawnX:spawn.x,spawnY:spawn.y,owner:PLAYER_ID});
+  queueAction({type:ACTION.RECRUIT,unitType:type,spawnX:spawn.x,spawnY:spawn.y,owner:curOwner});
 }
 
 /* ═══════════════════════════════ ACTION QUEUE ═══════════════════════════ */
@@ -613,44 +634,47 @@ function resolvePending(){
 
   state.pendingAction=null; state.inputLocked=false;
 
-  if(checkCmdrVictory()) return;
+  if(checkAllUnitsVictory()) return;
   if(checkSweepVictory()) return;
-  if(state.eliminationMode && checkEliminVictory()) return;
 
   startPhase(state.phase==="player"?"ai":"player");
 }
 
 /* ═══════════════════════════════ VICTORY ════════════════════════════════ */
-function checkCmdrVictory(){
-  const pc=state.units.find(u=>u.owner===PLAYER_ID&&u.type==="commander");
-  const ac=state.units.find(u=>u.owner===AI_ID&&u.type==="commander");
-  if(!pc&&!ac){endGame("DRAW"); return true;}
-  if(!pc){endGame("OPPONENT VICTORY"); return true;}
-  if(!ac){endGame("PLAYER VICTORY"); return true;}
+function checkAllUnitsVictory(){
+  const p=state.units.filter(u=>u.owner===PLAYER_ID).length;
+  const a=state.units.filter(u=>u.owner===AI_ID).length;
+  // Both sides still have troops — no victory yet
+  if(p>0&&a>0) return false;
+
+  const pCmdr=state.units.find(u=>u.owner===PLAYER_ID&&u.type==="commander");
+  const aCmdr=state.units.find(u=>u.owner===AI_ID&&u.type==="commander");
+
+  let reason="";
+  if(p===0&&a===0){ endGame("DRAW","Mutual annihilation. No survivors."); return true; }
+  if(p===0){
+    reason = !pCmdr ? "Commander KIA — operation failed." : "All troops annihilated.";
+    endGame(state.twoPlayer?"PLAYER 2 VICTORY":"OPPONENT VICTORY", reason); return true;
+  }
+  if(a===0){
+    reason = !aCmdr ? "Enemy Commander eliminated." : "All enemy troops annihilated.";
+    endGame(state.twoPlayer?"PLAYER 1 VICTORY":"PLAYER VICTORY", reason); return true;
+  }
   return false;
 }
 
 function checkSweepVictory(){
   const total=GRID_W*GRID_H;
-  if(countOwned(PLAYER_ID)===total){endGame("PLAYER VICTORY"); return true;}
-  if(countOwned(AI_ID)===total){endGame("OPPONENT VICTORY"); return true;}
+  if(countOwned(PLAYER_ID)===total){endGame(state.twoPlayer?"PLAYER 1 VICTORY":"PLAYER VICTORY","Total territorial dominance."); return true;}
+  if(countOwned(AI_ID)===total){endGame(state.twoPlayer?"PLAYER 2 VICTORY":"OPPONENT VICTORY","Territory overrun."); return true;}
   return false;
 }
 
-function checkEliminVictory(){
-  const p=state.units.filter(u=>u.owner===PLAYER_ID).length;
-  const a=state.units.filter(u=>u.owner===AI_ID).length;
-  if(p>0&&a>0) return false;
-  if(p>0) endGame("PLAYER VICTORY"); else if(a>0) endGame("OPPONENT VICTORY"); else endGame("DRAW");
-  return true;
-}
-
-function endGame(text){
+function endGame(text, sub=""){
   state.gameOver=true;
-  const win=text.includes("PLAYER VICTORY");
+  const p1win=text.includes("PLAYER VICTORY")||text.includes("PLAYER 1 VICTORY");
   const draw=text.includes("DRAW");
-  const col=win?"#7ab8e8":draw?"#e8b84b":"#e87a7a";
-  const sub=win?"Operation complete. Mission success.":draw?"Mutual annihilation.":"Commander KIA. Mission failed.";
+  const col=p1win?"#7ab8e8":draw?"#e8b84b":"#e87a7a";
   ui.resultOverlay.innerHTML=`
     <div class="resTitle" style="color:${col}">${text}</div>
     <div class="resSub">${sub}</div>
@@ -772,6 +796,7 @@ function chooseAiAction(){
 }
 
 function processAi(now){
+  if(state.twoPlayer) return; // human controls both sides
   if(state.phase!=="ai"||state.gameOver||state.pendingAction) return;
   if(now<state.aiThinkUntil) return;
   ui.aiToast.classList.remove("show");
@@ -1000,7 +1025,8 @@ function drawIcon(type,px,py,ip,r){
 
 /* Range overlay */
 function drawRanges(unit){
-  if(!unit||state.phase!=="player"||state.actionPoint<=0||state.inputLocked) return;
+  const interactive = state.phase==="player" || (state.twoPlayer && state.phase==="ai");
+  if(!unit||!interactive||state.actionPoint<=0||state.inputLocked) return;
   for(let y=0;y<GRID_H;y++) for(let x=0;x<GRID_W;x++){
     const d=manhattan(unit,{x,y});
     if(d===0) continue;
@@ -1096,17 +1122,25 @@ function render(now,dt){
 
 /* ═══════════════════════════════ UI UPDATE ══════════════════════════════ */
 function updateUI(){
+  const curOwner=activeOwn();
   const ip=state.phase==="player";
-  const canAct=ip&&state.actionPoint>0&&!state.inputLocked&&!state.gameOver;
-  const gold=state.gold[PLAYER_ID];
-  const inc=computeIncome(PLAYER_ID);
+  const isInteractive=(ip||(state.twoPlayer&&!ip));
+  const canAct=isInteractive&&state.actionPoint>0&&!state.inputLocked&&!state.gameOver;
+  const gold=state.gold[curOwner];
+  const inc=computeIncome(curOwner);
 
   ui.goldAmt.textContent=gold;
   ui.goldInc.textContent=`+${inc}/turn`;
 
-  // Phase
+  // Phase label
+  let phaseLabel, phaseCol;
+  if(state.twoPlayer){
+    phaseLabel=ip?"PLAYER 1":"PLAYER 2"; phaseCol=ip?"#6ab0de":"#de8f3a";
+  } else {
+    phaseLabel=ip?"PLAYER":"OPPONENT"; phaseCol=ip?"#6ab0de":"#de6a6a";
+  }
   const ap=state.actionPoint>0?"1 action ready":"waiting...";
-  ui.phaseInfo.innerHTML=`<span style="color:${ip?"#6ab0de":"#de6a6a"}">${ip?"PLAYER":"OPPONENT"}</span> · ${ap}`;
+  ui.phaseInfo.innerHTML=`<span style="color:${phaseCol}">${phaseLabel}</span> · ${ap}`;
 
   // Selection
   const sel=getById(state.selectedUnitId);
@@ -1115,7 +1149,7 @@ function updateUI(){
     const hc=sel.hp>sel.maxHp*0.5?"#6dbf63":"#d44444";
     ui.selectedInfo.innerHTML=`<span style="color:#d4c9a0;font-weight:bold;">${sel.label}</span> (${ownerName(sel.owner)})<br>HP: <span style="color:${hc}">${sel.hp}/${sel.maxHp}</span> · ATK:${sel.atk} · MOV:${sel.moveRange} · RNG:${sel.attackRange}`;
   } else if(st){
-    const own=st.owner===PLAYER_ID?"yours":st.owner===AI_ID?"enemy":"neutral";
+    const own=st.owner===curOwner?"yours":st.owner===enemy(curOwner)?"enemy":"neutral";
     const bld=st.building?`${st.building} (HP:${st.bldgHp})`:"empty";
     ui.selectedInfo.innerHTML=`Tile [${state.selectedTile.x},${state.selectedTile.y}]<br>${own} · ${bld}`;
   } else {
@@ -1123,11 +1157,11 @@ function updateUI(){
   }
 
   // Build buttons
-  const canBuild=canAct&&!state.buildLocked&&state.selectedTile&&canBuildAt(state.selectedTile);
+  const canBuild=canAct&&!state.buildLocked&&state.selectedTile&&canBuildAt(state.selectedTile,curOwner);
   for(const b of ui.buildBtns) b.disabled=!canBuild;
 
   // Recruit
-  const brs=barracksOf(PLAYER_ID);
+  const brs=barracksOf(curOwner);
   ui.recruitStatus.textContent=brs.length?`${brs.length} barracks · spawns adjacent`:"Build a Barracks first.";
   for(const b of ui.recruitBtns){
     const cost=UNIT_DEFS[b.dataset.recruit]?.cost||0;
@@ -1138,13 +1172,14 @@ function updateUI(){
   const pt=countOwned(PLAYER_ID), at=countOwned(AI_ID);
   const pu=state.units.filter(u=>u.owner===PLAYER_ID).length;
   const au=state.units.filter(u=>u.owner===AI_ID).length;
-  ui.statusInfo.innerHTML=`<span style="color:#6ab0de">▣${pt}</span> / <span style="color:#de6a6a">${at}▣</span> tiles · <span style="color:#6ab0de">⊕${pu}</span> / <span style="color:#de6a6a">${au}⊕</span> units<br><span style="font-size:9px;color:var(--muted)">${state.eliminationMode?"⚡ ELIMINATION MODE":state.shatterTriggered?"SHATTER ACTIVE":`Shatter at 2:00`}</span>`;
+  const p1lbl=state.twoPlayer?"P1":"Player", p2lbl=state.twoPlayer?"P2":"Enemy";
+  ui.statusInfo.innerHTML=`<span style="color:#6ab0de">▣${pt} ${p1lbl}</span> / <span style="color:#de6a6a">${p2lbl} ${at}▣</span><br><span style="color:#6ab0de">⊕${pu}</span> / <span style="color:#de6a6a">${au}⊕</span> units · ◈${state.gold[0]}/${state.gold[1]}<br><span style="font-size:9px;color:var(--muted)">${state.eliminationMode?"⚡ ELIMINATION MODE":"Shatter at 2:00"}</span>`;
 }
 
-function canBuildAt(pos){
+function canBuildAt(pos,owner){
   if(!pos) return false;
   const t=getTile(pos.x,pos.y);
-  return t&&t.owner===PLAYER_ID&&!t.building&&!getAt(pos.x,pos.y);
+  return t&&t.owner===owner&&!t.building&&!getAt(pos.x,pos.y);
 }
 
 /* ═══════════════════════════════ LOOP ═══════════════════════════════════ */
@@ -1178,6 +1213,7 @@ function loop(now){
 
 /* ═══════════════════════════════ RESET / START ══════════════════════════ */
 function resetMatch(){
+  const tp=state.twoPlayer; // preserve mode
   Object.assign(state,{
     map:[],units:[],gold:[10,10],income:[0,0],
     phase:"player",actionPoint:1,inputLocked:false,pendingAction:null,
@@ -1185,22 +1221,25 @@ function resetMatch(){
     aiThinkUntil:0,aiTurnCount:0,
     elapsedSec:0,gameStartedAt:performance.now(),lastFrame:0,
     shatterTriggered:false,eliminationMode:false,buildLocked:false,
-    shakeUntil:0,particles:[],flashTiles:[],gameOver:false,winnerText:""
+    shakeUntil:0,particles:[],flashTiles:[],gameOver:false,winnerText:"",
+    twoPlayer:tp
   });
   nextUnitId=1;
   ui.resultOverlay.classList.remove("show");
   ui.log.innerHTML="";
   ui.timerHud.classList.remove("danger");
   initMap();
-  banner("── PLAYER PHASE ──","#6ab0de","rgba(74,143,191,0.42)");
+  const p1lbl=tp?"PLAYER 1":"PLAYER";
+  banner(`── ${p1lbl} PHASE ──`,"#6ab0de","rgba(74,143,191,0.42)");
   updateUI();
-  logMsg("Operation deployed. Protect your Commander.","lg");
+  logMsg(`Mode: ${tp?"2-Player Hotseat":"vs AI"} · Protect your Commander.`,"lg");
   logMsg("Build Barracks → earn gold → recruit units to survive.","lm");
   logMsg("Walls block enemy movement. Attack them to destroy.","lm");
 }
 
-function startGame(){
+function startGame(twoPlayer=false){
   if(ui.homeOverlay.hidden||ui.homeOverlay.classList.contains("closing")) return;
+  state.twoPlayer=twoPlayer;
   ui.homeOverlay.classList.add("closing");
   setTimeout(()=>{ui.homeOverlay.hidden=true; ui.homeOverlay.classList.remove("closing");},280);
   resetMatch();
