@@ -440,6 +440,33 @@ function initMap(){
   state.units.push(makeUnit(AI_ID,"commander",GRID_W-2,ph));
   state.units.push(makeUnit(AI_ID,"soldier",GRID_W-3,ph-2));
   state.units.push(makeUnit(AI_ID,"soldier",GRID_W-3,ph+2));
+
+  // Bonus starting resources per difficulty
+  const d=state.difficulty;
+  if(d==="master"){
+    state.gold[AI_ID]=22;
+    state.units.push(makeUnit(AI_ID,"soldier",GRID_W-4,ph));
+    getTile(GRID_W-4,ph-3).building="barracks"; getTile(GRID_W-4,ph-3).bldgHp=BLDG_DEFS.barracks.maxHp;
+  }
+  if(d==="demon"){
+    state.gold[AI_ID]=35;
+    state.units.push(makeUnit(AI_ID,"warrior",GRID_W-4,ph));
+    state.units.push(makeUnit(AI_ID,"ranger",GRID_W-5,ph-1));
+    getTile(GRID_W-4,ph-3).building="barracks"; getTile(GRID_W-4,ph-3).bldgHp=BLDG_DEFS.barracks.maxHp;
+    getTile(GRID_W-5,ph+3).building="barracks"; getTile(GRID_W-5,ph+3).bldgHp=BLDG_DEFS.barracks.maxHp;
+    for(let y=2;y<12;y++) for(let x=GRID_W-6;x<GRID_W-4;x++) getTile(x,y).owner=AI_ID;
+  }
+  if(d==="unbeatable"){
+    state.gold[AI_ID]=55;
+    state.units.push(makeUnit(AI_ID,"warrior",GRID_W-4,ph));
+    state.units.push(makeUnit(AI_ID,"warrior",GRID_W-4,ph-2));
+    state.units.push(makeUnit(AI_ID,"ranger",GRID_W-5,ph+1));
+    state.units.push(makeUnit(AI_ID,"ranger",GRID_W-5,ph-3));
+    getTile(GRID_W-4,ph-3).building="barracks"; getTile(GRID_W-4,ph-3).bldgHp=BLDG_DEFS.barracks.maxHp;
+    getTile(GRID_W-5,ph+3).building="barracks"; getTile(GRID_W-5,ph+3).bldgHp=BLDG_DEFS.barracks.maxHp;
+    getTile(GRID_W-6,ph).building="barracks";   getTile(GRID_W-6,ph).bldgHp=BLDG_DEFS.barracks.maxHp;
+    for(let y=1;y<13;y++) for(let x=GRID_W-7;x<GRID_W-4;x++) getTile(x,y).owner=AI_ID;
+  }
 }
 
 /* ═══════════════════════════════ ECONOMY ════════════════════════════════ */
@@ -741,23 +768,22 @@ function playSound(freq,dur,type="triangle"){
 
 /* ═══════════════════════════════ AI ══════════════════════════════════════ */
 
-// Difficulty profiles
 const DIFF = {
-  easy:       { bonusGold:0, thinkMs:800,  randomTop:6, blunderChance:0.45, aggrMult:0.4, cmdrPriority:0,  buildScore:0.3, recruitScore:0.3 },
-  normal:     { bonusGold:0, thinkMs:600,  randomTop:3, blunderChance:0.15, aggrMult:1.0, cmdrPriority:1,  buildScore:1.0, recruitScore:1.0 },
-  hard:       { bonusGold:0, thinkMs:400,  randomTop:2, blunderChance:0.05, aggrMult:1.4, cmdrPriority:2,  buildScore:1.2, recruitScore:1.3 },
-  master:     { bonusGold:1, thinkMs:300,  randomTop:1, blunderChance:0.0,  aggrMult:1.8, cmdrPriority:3,  buildScore:1.5, recruitScore:1.6 },
-  demon:      { bonusGold:3, thinkMs:200,  randomTop:1, blunderChance:0.0,  aggrMult:2.2, cmdrPriority:4,  buildScore:1.8, recruitScore:2.0 },
-  unbeatable: { bonusGold:6, thinkMs:100,  randomTop:1, blunderChance:0.0,  aggrMult:3.0, cmdrPriority:5,  buildScore:2.2, recruitScore:2.5 },
+  easy:       { bonusGold:0,  startGold:10, thinkMs:900,  randomTop:6, blunderChance:0.48, aggrMult:0.35, cmdrW:0,   econW:0.3, defW:0.2 },
+  normal:     { bonusGold:0,  startGold:10, thinkMs:600,  randomTop:3, blunderChance:0.12, aggrMult:1.0,  cmdrW:1,   econW:1.0, defW:0.8 },
+  hard:       { bonusGold:0,  startGold:10, thinkMs:400,  randomTop:2, blunderChance:0.04, aggrMult:1.5,  cmdrW:2,   econW:1.2, defW:1.0 },
+  master:     { bonusGold:2,  startGold:22, thinkMs:280,  randomTop:1, blunderChance:0.0,  aggrMult:2.0,  cmdrW:3,   econW:1.6, defW:1.4 },
+  demon:      { bonusGold:4,  startGold:35, thinkMs:160,  randomTop:1, blunderChance:0.0,  aggrMult:2.8,  cmdrW:4,   econW:2.0, defW:1.6 },
+  unbeatable: { bonusGold:7,  startGold:55, thinkMs:80,   randomTop:1, blunderChance:0.0,  aggrMult:4.0,  cmdrW:5,   econW:2.8, defW:2.0 },
 };
 
 const DIFF_DESCS = {
   easy:       "The AI will make mistakes and rarely press its advantage.",
   normal:     "Balanced play. Will attack, build, and recruit at a reasonable pace.",
   hard:       "Actively hunts your units. Prioritizes killing over territory.",
-  master:     "Economy-focused and tactical. Gets bonus gold. Reads the board well.",
-  demon:      "Near-perfect decisions with significant gold advantage every turn.",
-  unbeatable: "Gets +6 gold per turn, always plays the optimal move. Genuinely hard to beat.",
+  master:     "+2 gold/turn, bonus starting resources. Reads board state and plans ahead.",
+  demon:      "+4 gold/turn. Large starting army. Coordinated multi-unit pressure.",
+  unbeatable: "+7 gold/turn, massive starting forces. Lookahead AI that counters your moves.",
 };
 
 function selectDiff(btn){
@@ -767,156 +793,274 @@ function selectDiff(btn){
   document.getElementById("diffDesc").textContent=DIFF_DESCS[state.difficulty];
 }
 
+/* ── Threat map: tiles endangered by a given owner ── */
+function buildThreatMap(attackerOwner){
+  const map={};
+  for(const u of state.units){
+    if(u.owner!==attackerOwner) continue;
+    for(let y=0;y<GRID_H;y++) for(let x=0;x<GRID_W;x++){
+      if(manhattan(u,{x,y})<=u.attackRange) map[`${x},${y}`]=(map[`${x},${y}`]||0)+u.atk;
+    }
+  }
+  return map;
+}
+
+/* ── How many AI units can reach (x,y) to attack next turn ── */
+function convergenceScore(x,y,foeOwner){
+  let n=0;
+  for(const u of state.units){
+    if(u.owner===AI_ID){
+      // Can attack directly
+      if(manhattan(u,{x,y})<=u.attackRange) n+=2;
+      // Can move-then-attack (range 1 units that can step adjacent)
+      else if(u.attackRange===1 && manhattan(u,{x,y})<=u.moveRange+1) n+=1;
+    }
+  }
+  return n;
+}
+
+/* ── Simulate: if AI kills targetUnit, what's the board impact? ── */
+function killImpact(target){
+  let score=0;
+  if(target.type==="commander") score+=500;
+  if(target.type==="warrior")   score+=40;
+  if(target.type==="ranger")    score+=35;  // removing ranged threat is valuable
+  if(target.type==="soldier")   score+=20;
+  // Bonus: target has only 1 HP left = cleanup is cheap
+  if(target.hp===1) score+=15;
+  // Bonus: killing grants the tile
+  const t=getTile(target.x,target.y);
+  if(t&&t.owner===PLAYER_ID) score+=8;
+  return score;
+}
+
+/* ── Is position (x,y) safe for AI (not in player threat)? ── */
+function isSafeFor(x,y,playerThreat){
+  return !playerThreat[`${x},${y}`];
+}
+
+/* ── One-step lookahead: would moving unit to (tx,ty) leave it killable? ── */
+function isExposed(unit,tx,ty){
+  // Check if any player unit could kill us after we move there
+  for(const p of state.units){
+    if(p.owner!==PLAYER_ID) continue;
+    const canReach = manhattan(p,{x:tx,y:ty})<=p.attackRange
+      || (p.attackRange===1 && manhattan(p,{x:tx,y:ty})<=p.moveRange+1);
+    if(canReach && p.atk>=unit.hp) return true;
+  }
+  return false;
+}
+
+/* ── Find best spawn tile for AI barracks ── */
 function aiSpawnTile(){
   const brs=barracksOf(AI_ID);
+  // Prefer tiles that are safer (further from enemy)
+  let best=null, bestDist=-1;
   for(const b of brs){
     for(const n of nbrs4(b.x,b.y)){
       const t=getTile(n.x,n.y);
-      if(t&&t.owner===AI_ID&&!getAt(n.x,n.y)&&t.building!=="wall") return n;
+      if(!t||t.owner!==AI_ID||getAt(n.x,n.y)||t.building==="wall") continue;
+      const minEnemyDist=Math.min(...state.units.filter(u=>u.owner===PLAYER_ID).map(u=>manhattan(u,n)),99);
+      if(minEnemyDist>bestDist){ bestDist=minEnemyDist; best=n; }
     }
   }
+  return best;
+}
+
+/* ── Pick best unit type given gold and board state ── */
+function pickRecruitType(g, profile){
+  const aiUnits=state.units.filter(u=>u.owner===AI_ID);
+  const warriors=aiUnits.filter(u=>u.type==="warrior").length;
+  const rangers=aiUnits.filter(u=>u.type==="ranger").length;
+  const pUnits=state.units.filter(u=>u.owner===PLAYER_ID);
+
+  // Count how many player units are at range >1 (ranger counters)
+  const rangedThreats=pUnits.filter(u=>u.attackRange>1).length;
+
+  if(profile.aggrMult<1.0){
+    return g>=UNIT_DEFS.soldier.cost?"soldier":null;
+  }
+  if(profile.aggrMult<1.5){
+    if(g>=UNIT_DEFS.ranger.cost&&rangers<2) return "ranger";
+    if(g>=UNIT_DEFS.soldier.cost) return "soldier";
+    return null;
+  }
+  // Master+: strategic composition
+  if(g>=UNIT_DEFS.warrior.cost&&warriors<3) return "warrior";  // frontline bulk
+  if(g>=UNIT_DEFS.ranger.cost&&rangers<3)   return "ranger";   // ranged pressure
+  if(g>=UNIT_DEFS.warrior.cost)             return "warrior";
+  if(g>=UNIT_DEFS.soldier.cost)             return "soldier";
   return null;
 }
 
-// Score a potential move destination for a given unit
-function scoreMoveTarget(unit, x, y, d){
-  const t=getTile(x,y);
-  const pCmdr=state.units.find(u=>u.owner===PLAYER_ID&&u.type==="commander");
-  const profile=DIFF[state.difficulty];
-  let sc=2;
-
-  // Capturing unclaimed / enemy tile
-  if(t&&t.owner!==AI_ID) sc+=18;
-
-  // Moving toward player commander
-  if(pCmdr){
-    const distNow=manhattan(unit,pCmdr);
-    const distNew=manhattan({x,y},pCmdr);
-    if(distNew<distNow) sc+=20*profile.aggrMult*Math.min(profile.cmdrPriority,3);
-  }
-
-  // Moving into defensive cover
-  if(defBuff(x,y,AI_ID)) sc+=12;
-
-  // Moving away from danger (enemy attack range)
-  const inDangerNow = state.units.some(u=>u.owner===PLAYER_ID&&manhattan(u,unit)<=u.attackRange);
-  const inDangerNew = state.units.some(u=>u.owner===PLAYER_ID&&manhattan(u,{x,y})<=u.attackRange);
-  if(inDangerNow&&!inDangerNew) sc+=22;
-
-  // Hard+ values flanking moves that get adjacent to enemy units
-  if(profile.aggrMult>=1.4){
-    const adjEnemies=state.units.filter(u=>u.owner===PLAYER_ID&&manhattan({x,y},u)===1).length;
-    sc+=adjEnemies*10*profile.aggrMult;
-  }
-
-  return sc;
-}
-
+/* ══ MAIN AI DECISION ENGINE ════════════════════════════════════════════ */
 function chooseAiAction(){
   const profile=DIFF[state.difficulty]||DIFF.normal;
-  const options=[];
-  const aiUnits=state.units.filter(u=>u.owner===AI_ID);
 
-  // Blunder: on easy/normal, occasionally just pass
+  // Random blunder pass
   if(Math.random()<profile.blunderChance) return {type:ACTION.PASS};
 
+  const options=[];
+  const aiUnits=state.units.filter(u=>u.owner===AI_ID);
+  const pThreat=buildThreatMap(PLAYER_ID);
+  const pCmdr=state.units.find(u=>u.owner===PLAYER_ID&&u.type==="commander");
+  const aiCmdr=state.units.find(u=>u.owner===AI_ID&&u.type==="commander");
+  const aiGold=state.gold[AI_ID];
+  const pUnitCount=state.units.filter(u=>u.owner===PLAYER_ID).length;
+  const aiUnitCount=aiUnits.length;
+
+  /* ────────────────────── UNIT ACTIONS ──────────────────────────────── */
   for(const u of aiUnits){
-    // ── Attack enemy units ──────────────────────────────────────────────
+
+    /* ATTACK UNITS */
     const targets=state.units.filter(t=>t.owner===PLAYER_ID&&manhattan(u,t)<=u.attackRange);
     for(const t of targets){
-      let sc=25*profile.aggrMult;
-      // Kill shot bonus
-      if(t.hp<=u.atk) sc+=55*profile.aggrMult;
-      // Commander targeting
-      if(t.type==="commander") sc+=30*profile.cmdrPriority*profile.aggrMult;
-      // Low HP target is juicy
-      sc+=((u.atk-t.hp)/u.atk)*20*profile.aggrMult;
-      // Easy AI sometimes ignores valid attacks
-      if(profile.blunderChance>0.2&&Math.random()<0.35) sc*=0.15;
+      let sc=0;
+      sc+=killImpact(t)*profile.aggrMult;
+
+      // Partial damage still valuable
+      sc+=u.atk*8*profile.aggrMult;
+
+      // Protecting a threatened AI unit: if we're under threat, attack instead of flee
+      if(pThreat[`${u.x},${u.y}`]) sc+=20;
+
+      // Easy sometimes ignores obvious attacks
+      if(profile.blunderChance>0.2&&Math.random()<0.4) sc*=0.1;
+
       options.push({sc, act:{type:ACTION.ATTACK,actorId:u.id,targetId:t.id,targetX:t.x,targetY:t.y}});
     }
 
-    // ── Attack enemy buildings ──────────────────────────────────────────
+    /* ATTACK BUILDINGS */
     for(let y=0;y<GRID_H;y++) for(let x=0;x<GRID_W;x++){
       const t=getTile(x,y);
       if(!t||t.owner!==PLAYER_ID||!t.building) continue;
       if(manhattan(u,{x,y})>u.attackRange) continue;
-      let sc=t.building==="barracks"
-        ? 38*profile.buildScore
-        : 18*profile.buildScore;
-      // Hard+ actively demolishes barracks to cripple economy
-      if(profile.aggrMult>=1.4&&t.building==="barracks") sc+=25;
+      let sc=0;
+      if(t.building==="barracks"){
+        // Destroying barracks cripples economy - highly valued at hard+
+        sc=50*profile.econW;
+        // If almost dead, finish it
+        if(t.bldgHp<=u.atk) sc+=40;
+      } else {
+        // Wall: worth destroying to open a path
+        sc=20*profile.defW;
+        if(t.bldgHp<=u.atk) sc+=25; // near death, finish it
+      }
       options.push({sc, act:{type:ACTION.ATTACK_BLDG,actorId:u.id,targetX:x,targetY:y}});
     }
 
-    // ── Move ────────────────────────────────────────────────────────────
+    /* MOVE */
     for(let y=0;y<GRID_H;y++) for(let x=0;x<GRID_W;x++){
       if(!canMoveTo(x,y)) continue;
       const d=manhattan(u,{x,y});
       if(d===0||d>u.moveRange) continue;
-      const sc=scoreMoveTarget(u,x,y,d);
+
+      let sc=0;
+      const tile=getTile(x,y);
+      const inDangerNow=!!pThreat[`${u.x},${u.y}`];
+      const inDangerNew=!!pThreat[`${x},${y}`];
+
+      // Flee if currently threatened and moving to safety
+      if(inDangerNow&&!inDangerNew) sc+=30*profile.defW;
+      // Penalize walking into danger (hard+ will respect this)
+      if(!inDangerNow&&inDangerNew) sc-=18*profile.aggrMult;
+
+      // Capturing territory
+      if(tile&&tile.owner!==AI_ID) sc+=16;
+
+      // Approaching player commander
+      if(pCmdr){
+        const dNow=manhattan(u,pCmdr), dNew=manhattan({x,y},pCmdr);
+        if(dNew<dNow) sc+=22*profile.aggrMult*Math.min(profile.cmdrW*0.6,3);
+      }
+
+      // Positioning to attack next turn (move adjacent to enemy unit or range gap)
+      for(const p of state.units.filter(u2=>u2.owner===PLAYER_ID)){
+        const distNew=manhattan({x,y},p);
+        if(distNew===u.attackRange) sc+=18*profile.aggrMult; // perfect attack range
+        if(distNew<manhattan(u,p))  sc+=6; // closing in
+      }
+
+      // Convergence: moving where multiple AI units can support
+      if(profile.aggrMult>=1.5) sc+=convergenceScore(x,y,PLAYER_ID)*4;
+
+      // Moving into barracks buff (defensive cover)
+      if(defBuff(x,y,AI_ID)) sc+=10*profile.defW;
+
+      // Lookahead: if this move leaves us killable, penalize (master+)
+      if(profile.randomTop===1 && isExposed(u,x,y)) sc-=40;
+
+      // Ranger tactic: stay at max range, don't expose self
+      if(u.type==="ranger"&&d===u.moveRange) sc+=8;
+
+      // Warrior tactic: push forward into enemy lines
+      if(u.type==="warrior"&&pCmdr&&manhattan({x,y},pCmdr)<manhattan(u,pCmdr)) sc+=15*profile.aggrMult;
+
+      // Commander: stay back unless winning
+      if(u.type==="commander"){
+        if(aiUnitCount>pUnitCount) sc+=4; // advance when winning
+        else sc-=12; // stay back when even or losing
+        if(inDangerNew) sc-=50; // never walk commander into danger
+      }
+
       options.push({sc, act:{type:ACTION.MOVE,actorId:u.id,toX:x,toY:y}});
     }
   }
 
-  // ── Build ─────────────────────────────────────────────────────────────
+  /* ────────────────────── BUILD ──────────────────────────────────────── */
   if(!state.buildLocked){
-    const hasBrk=barracksOf(AI_ID).length>0;
     const brkCount=barracksOf(AI_ID).length;
-    const maxBarracks=profile.buildScore>=1.5?4:profile.buildScore>=1.0?3:2;
+    const wallCount=state.map.flat().filter(t=>t.owner===AI_ID&&t.building==="wall").length;
+    const maxBarracks=profile.econW>=2.0?5:profile.econW>=1.5?4:profile.econW>=1.0?3:2;
+    const maxWalls=profile.defW>=1.5?6:profile.defW>=1.0?4:2;
 
     for(let y=0;y<GRID_H;y++) for(let x=0;x<GRID_W;x++){
       const t=getTile(x,y);
       if(!t||t.owner!==AI_ID||t.building||getAt(x,y)) continue;
-      const nearEnemy=nbrs4(x,y).some(n=>getTile(n.x,n.y)?.owner===PLAYER_ID);
 
-      if(!hasBrk){
-        // Always prioritize first barracks regardless of difficulty
-        options.push({sc:80, act:{type:ACTION.BUILD,x,y,owner:AI_ID,building:"barracks"}});
-      } else if(nearEnemy){
-        const wallSc=28*profile.buildScore+(profile.aggrMult<1?0:nearEnemy?12:0);
-        options.push({sc:wallSc, act:{type:ACTION.BUILD,x,y,owner:AI_ID,building:"wall"}});
-      } else if(brkCount<maxBarracks){
-        options.push({sc:35*profile.buildScore, act:{type:ACTION.BUILD,x,y,owner:AI_ID,building:"barracks"}});
+      const nearEnemy=nbrs4(x,y).some(n=>getTile(n.x,n.y)?.owner===PLAYER_ID);
+      const nearBarracks=nbrs4(x,y).some(n=>getTile(n.x,n.y)?.building==="barracks"&&getTile(n.x,n.y)?.owner===AI_ID);
+
+      // First barracks always top priority
+      if(brkCount===0){
+        options.push({sc:100, act:{type:ACTION.BUILD,x,y,owner:AI_ID,building:"barracks"}});
+      }
+      // Additional barracks: strong economy priority at master+
+      else if(brkCount<maxBarracks&&!nearEnemy){
+        const sc=42*profile.econW - brkCount*5;
+        options.push({sc, act:{type:ACTION.BUILD,x,y,owner:AI_ID,building:"barracks"}});
+      }
+      // Walls near enemy border
+      if(nearEnemy&&wallCount<maxWalls){
+        const sc=35*profile.defW;
+        options.push({sc, act:{type:ACTION.BUILD,x,y,owner:AI_ID,building:"wall"}});
+      }
+      // Wall in front of barracks to protect it (master+)
+      if(nearBarracks&&nearEnemy&&profile.defW>=1.4&&wallCount<maxWalls){
+        options.push({sc:50*profile.defW, act:{type:ACTION.BUILD,x,y,owner:AI_ID,building:"wall"}});
       }
     }
   }
 
-  // ── Recruit ───────────────────────────────────────────────────────────
+  /* ────────────────────── RECRUIT ────────────────────────────────────── */
   const sp=aiSpawnTile();
   if(sp){
-    const g=state.gold[AI_ID];
-    const uc=state.units.filter(u=>u.owner===AI_ID).length;
-    const targetArmy=3+Math.floor(profile.aggrMult*3);
-
-    // Unit preference by difficulty: easy = soldier spam, hard+ = smart mix
-    let ut=null;
-    if(profile.aggrMult<1.0){
-      ut=g>=UNIT_DEFS.soldier.cost?"soldier":null;
-    } else if(profile.aggrMult<1.5){
-      ut=g>=UNIT_DEFS.ranger.cost?"ranger":g>=UNIT_DEFS.soldier.cost?"soldier":null;
-    } else {
-      // Master+ prefers warriors when they can afford it, rangers for range control
-      if(g>=UNIT_DEFS.warrior.cost&&uc<targetArmy) ut="warrior";
-      else if(g>=UNIT_DEFS.ranger.cost) ut="ranger";
-      else if(g>=UNIT_DEFS.soldier.cost) ut="soldier";
-    }
-
+    const ut=pickRecruitType(aiGold,profile);
     if(ut){
-      const recruitSc=uc<targetArmy
-        ? 55*profile.recruitScore
-        : 20*profile.recruitScore;
-      options.push({sc:recruitSc, act:{type:ACTION.RECRUIT,unitType:ut,spawnX:sp.x,spawnY:sp.y,owner:AI_ID}});
+      const targetArmy=3+Math.floor(profile.aggrMult*2.5);
+      const urgency=aiUnitCount<pUnitCount?1.4:aiUnitCount<targetArmy?1.0:0.5;
+      const sc=60*profile.econW*urgency;
+      options.push({sc, act:{type:ACTION.RECRUIT,unitType:ut,spawnX:sp.x,spawnY:sp.y,owner:AI_ID}});
     }
   }
 
+  /* ────────────────────── PICK ACTION ────────────────────────────────── */
   if(!options.length) return {type:ACTION.PASS};
   options.sort((a,b)=>b.sc-a.sc);
 
-  // Pick from top N options (higher randomTop = more chaotic/unpredictable on easy)
+  // Unbeatable: always optimal. Lower difficulties pick from wider random pool.
   const poolSize=Math.min(profile.randomTop,options.length);
-  const pick=Math.floor(Math.random()*poolSize);
-  return options[pick].act;
+  return options[Math.floor(Math.random()*poolSize)].act;
 }
 
 function processAi(now){
@@ -924,11 +1068,8 @@ function processAi(now){
   if(state.phase!=="ai"||state.gameOver||state.pendingAction) return;
   if(now<state.aiThinkUntil) return;
 
-  // Demon/Unbeatable get bonus gold every AI turn
   const profile=DIFF[state.difficulty]||DIFF.normal;
-  if(profile.bonusGold>0){
-    state.gold[AI_ID]+=profile.bonusGold;
-  }
+  if(profile.bonusGold>0) state.gold[AI_ID]+=profile.bonusGold;
 
   ui.aiToast.classList.remove("show");
   const act=chooseAiAction();
